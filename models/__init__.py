@@ -3,9 +3,17 @@ from utils.utils import init_weights
 
 AVAILABLE_MODEL_TYPES = ["rnn"]
 
-def get_model(model_type, emb_size, hid_size, env):
-    if model_type not in AVAILABLE_MODEL_TYPES
+def get_model(env):
+    model_name = env.args.model
+    if model_name not in AVAILABLE_MODEL_TYPES:
         return None
-    elif model_type == "rnn":
-        model = LM_RNN((emb_size, hid_size, len(env.lang), pad_index=env.pad_token_id).to(env.device))
+    if model_name == "rnn":
+        model = LM_RNN(env.args.emb_size, env.args.hid_size, len(env.lang), pad_index=env.pad_token_id).to(env.device)
     return model.apply(init_weights)
+
+def save_model():
+    #path = "./output/model.pt"
+    #torch.save(model.state_dict(), path)
+    #model = LM_RNN(emb_size, hid_size, len(lang), pad_index=pad_token_id).to(device)
+    #model.load_state_dict(torch.load(path))
+    ...

@@ -1,68 +1,64 @@
-import os
+import argparse
 import copy
-from functools import partial
-import math
 
-import toml
-from tqdm import tqdm
-import numpy as np
 import torch
 import torch.optim as optim
 
-from utils.utils import train_loop, eval_loop
 from utils.environment import Environment
-from models import get_model
+from utils.utils import train_loop, eval_loop
+from models import get_model, save_model
 
-# Don't forget to experiment with a lower training batch size
-# Increasing the back propagation steps can be seen as a regularization step
-env = Environment()
-
+parser = argparse.ArgumentParser()
+parser.add_argument("--model", default="rnn")
 # Experiment also with a smaller or bigger model by changing hid and emb sizes
 # A large model tends to overfit
-hid_size = 200
-emb_size = 300
-
+parser.add_argument("--hid-size", type=int, default=200)
+parser.add_argument("--emb-size", type=int, default=300)
 # With SGD try with an higher learning rate (> 1 for instance)
-lr = 1.1 # This is definitely not good for SGD
-clip = 5 # Clip the gradient
+parser.add_argument("--lr", type=float, default=1.0)
+# Clip the gradient
+parser.add_argument("--clip", type=int, default=5)
+# Don't forget to experiment with a lower training batch size
+# Increasing the back propagation steps can be seen as a regularization step
+parser.add_argument("--train-batch-size", type=int, default=64)
+parser.add_argument("--dev-batch-size", type=int, default=128)
+parser.add_argument("--test-batch-size", type=int, default=128)
+parser.add_argument("--epochs", type=int, default=100)
 
-model = get_model("rnn", emb_size, hid_size, env)
 
-optimizer = optim.SGD(model.parameters(), lr=lr)
-criterion_train = torch.nn.CrossEntropyLoss(ignore_index=env.pad_token_id)
-criterion_eval = torch.nn.CrossEntropyLoss(ignore_index=env.pad_token_id, reduction='sum')
+def run_epochs(model, optimizer, criterion_train, criterion_eval, env: Environment, patience=3):
+    best_ppl = float('inf')
+    best_model = None
+    current_patience = patience
+    for epoch in range(env.args.epochs):
+        loss_train = train_loop(env.dataloaders["train"], optimizer, criterion_train, model, env.args.clip)
+        #losses_train.append(np.asarray(loss).mean())
+        ppl_dev, loss_dev = eval_loop(env.dataloaders["dev"], criterion_eval, model)
+        #losses_dev.append(np.asarray(loss_dev).mean())
+        print("Train loss: ", loss_train, " Dev loss: ", loss_dev)
+        if  ppl_dev < best_ppl: # the lower, the better
+            best_ppl = ppl_dev
+            best_model = copy.deepcopy(model).to('cpu')
+            current_patience = patience
+        else:
+            current_patience -= 1
+        if current_patience <= 0:
+            break
+        
+    best_model.to(env.device)
+    return best_model
 
-n_epochs = 100
-patience = 3
-losses_train = []
-losses_dev = []
-sampled_epochs = []
-best_ppl = math.inf
-best_model = None
-pbar = tqdm(range(1,n_epochs))
-#If the PPL is too high try to change the learning rate
-for epoch in pbar:
-    loss = train_loop(train_loader, optimizer, criterion_train, model, clip)
-    sampled_epochs.append(epoch)
-    losses_train.append(np.asarray(loss).mean())
-    ppl_dev, loss_dev = eval_loop(dev_loader, criterion_eval, model)
-    losses_dev.append(np.asarray(loss_dev).mean())
-    pbar.set_description("PPL: %f" % ppl_dev)
-    if  ppl_dev < best_ppl: # the lower, the better
-        best_ppl = ppl_dev
-        best_model = copy.deepcopy(model).to('cpu')
-        patience = 3
-    else:
-        patience -= 1
+def main():
+    args = parser.parse_args()
+    env = Environment(args)
+    model = get_model(env)
+    optimizer = optim.SGD(model.parameters(), lr=env.args.lr)
+    criterion_train = torch.nn.CrossEntropyLoss(ignore_index=env.pad_token_id)
+    criterion_eval = torch.nn.CrossEntropyLoss(ignore_index=env.pad_token_id, reduction='sum')
+    best_model = run_epochs(model, optimizer, criterion_train, criterion_eval, env)
+    final_ppl,  _ = eval_loop(env.dataloaders["test"], criterion_eval, best_model)
+    print('Final PPL: ', final_ppl)
+    #save_model(best_model)
 
-    if patience <= 0: # Early stopping with patience
-        break # Not nice but it keeps the code clean
-
-best_model.to(device)
-final_ppl,  _ = eval_loop(test_loader, criterion_eval, best_model)
-print('Test ppl: ', final_ppl)
-
-path = "./output/model.pt"
-torch.save(model.state_dict(), path)
-model = LM_RNN(emb_size, hid_size, len(lang), pad_index=pad_token_id).to(device)
-model.load_state_dict(torch.load(path))
+if __name__ == "__main__":
+    main()
