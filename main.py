@@ -4,7 +4,7 @@ import copy
 import torch
 import torch.optim as optim
 
-from logger import Logger
+from logger.Logger import Logger
 from utils.Environment import Environment
 from utils.utils import train_loop, eval_loop
 from models import get_model, save_model
@@ -58,7 +58,7 @@ def main():
     optimizer = optim.SGD(model.parameters(), lr=env.args.lr)
     criterion_train = torch.nn.CrossEntropyLoss(ignore_index=env.pad_token_id)
     criterion_eval = torch.nn.CrossEntropyLoss(ignore_index=env.pad_token_id, reduction='sum')
-    best_model = run_epochs(model, optimizer, criterion_train, criterion_eval, env)
+    best_model = run_epochs(model, optimizer, criterion_train, criterion_eval, env, logger)
     final_ppl, _ = eval_loop(env.dataloaders["test"], criterion_eval, best_model)
     logger.set_final_ppl(final_ppl)
     print(logger.dumps())
