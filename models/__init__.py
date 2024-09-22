@@ -1,7 +1,8 @@
 from .LM_RNN import LM_RNN
+from .LM_LSTM import LM_LSTM
 from utils.utils import init_weights
 
-AVAILABLE_MODEL_TYPES = ["rnn"]
+AVAILABLE_MODEL_TYPES = ["rnn", "lstm"]
 
 def get_model(env):
     model_name = env.args.model
@@ -9,6 +10,8 @@ def get_model(env):
         return None
     if model_name == "rnn":
         model = LM_RNN(env.args.emb_size, env.args.hid_size, len(env.lang), pad_index=env.pad_token_id).to(env.device)
+    elif model_name == "lstm":
+        model = LM_LSTM(env.args.emb_size, env.args.hid_size, len(env.lang), pad_index=env.pad_token_id).to(env.device)
     return model.apply(init_weights)
 
 def save_model():
