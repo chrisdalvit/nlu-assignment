@@ -4,7 +4,8 @@ import copy
 import torch
 import torch.optim as optim
 
-from utils.environment import Environment
+from logger import Logger
+from utils.Environment import Environment
 from utils.utils import train_loop, eval_loop
 from models import get_model, save_model
 
@@ -26,7 +27,7 @@ parser.add_argument("--test-batch-size", type=int, default=128)
 parser.add_argument("--epochs", type=int, default=100)
 
 
-def run_epochs(model, optimizer, criterion_train, criterion_eval, env: Environment, patience=3):
+def run_epochs(model, optimizer, criterion_train, criterion_eval, env, logger, patience=3):
     best_ppl = float('inf')
     best_model = None
     current_patience = patience
@@ -42,6 +43,7 @@ def run_epochs(model, optimizer, criterion_train, criterion_eval, env: Environme
             current_patience = patience
         else:
             current_patience -= 1
+        logger.add_epoch_log(epoch, loss_train, loss_dev, ppl_dev)
         if current_patience <= 0:
             break
         
@@ -51,14 +53,15 @@ def run_epochs(model, optimizer, criterion_train, criterion_eval, env: Environme
 def main():
     args = parser.parse_args()
     env = Environment(args)
+    logger = Logger(env)
     model = get_model(env)
     optimizer = optim.SGD(model.parameters(), lr=env.args.lr)
     criterion_train = torch.nn.CrossEntropyLoss(ignore_index=env.pad_token_id)
     criterion_eval = torch.nn.CrossEntropyLoss(ignore_index=env.pad_token_id, reduction='sum')
     best_model = run_epochs(model, optimizer, criterion_train, criterion_eval, env)
-    final_ppl,  _ = eval_loop(env.dataloaders["test"], criterion_eval, best_model)
-    print('Final PPL: ', final_ppl)
-    #save_model(best_model)
+    final_ppl, _ = eval_loop(env.dataloaders["test"], criterion_eval, best_model)
+    logger.set_final_ppl(final_ppl)
+    print(logger.dumps())
 
 if __name__ == "__main__":
     main()

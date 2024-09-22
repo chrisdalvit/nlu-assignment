@@ -12,6 +12,9 @@ def get_model(env):
     return model.apply(init_weights)
 
 def save_model():
+    #
+    # TODO: implement save function
+    # 
     #path = "./output/model.pt"
     #torch.save(model.state_dict(), path)
     #model = LM_RNN(emb_size, hid_size, len(lang), pad_index=pad_token_id).to(device)
