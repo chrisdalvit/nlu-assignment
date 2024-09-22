@@ -1,17 +1,37 @@
 from .LM_RNN import LM_RNN
 from .LM_LSTM import LM_LSTM
+from .LM_LSTM_Dropout import LM_LSTM_Dropout
 from utils.utils import init_weights
 
-AVAILABLE_MODEL_TYPES = ["rnn", "lstm"]
+AVAILABLE_MODEL_TYPES = ["rnn", "lstm", "lstm_dropout"]
 
 def get_model(env):
     model_name = env.args.model
     if model_name not in AVAILABLE_MODEL_TYPES:
         return None
     if model_name == "rnn":
-        model = LM_RNN(env.args.emb_size, env.args.hid_size, len(env.lang), pad_index=env.pad_token_id).to(env.device)
+        model = LM_RNN(
+            env.args.emb_size, 
+            env.args.hid_size, 
+            len(env.lang), 
+            pad_index=env.pad_token_id
+        ).to(env.device)
     elif model_name == "lstm":
-        model = LM_LSTM(env.args.emb_size, env.args.hid_size, len(env.lang), pad_index=env.pad_token_id).to(env.device)
+        model = LM_LSTM(
+            env.args.emb_size, 
+            env.args.hid_size, 
+            len(env.lang), 
+            pad_index=env.pad_token_id
+        ).to(env.device)
+    elif model_name == "lstm_dropout":
+        model = LM_LSTM_Dropout(
+            env.args.emb_size, 
+            env.args.hid_size, 
+            len(env.lang),
+            pad_index=env.pad_token_id,
+            emb_dropout=env.args.emb_dropout,
+            out_dropout=env.args.out_dropout
+        ).to(env.device)
     return model.apply(init_weights)
 
 def save_model():

@@ -25,6 +25,8 @@ parser.add_argument("--train-batch-size", type=int, default=64)
 parser.add_argument("--dev-batch-size", type=int, default=128)
 parser.add_argument("--test-batch-size", type=int, default=128)
 parser.add_argument("--epochs", type=int, default=100)
+parser.add_argument("--out-dropout", type=float, default=0.1)
+parser.add_argument("--emb-dropout", type=float, default=0.1)
 
 
 def run_epochs(model, optimizer, criterion_train, criterion_eval, env, logger, patience=3):
