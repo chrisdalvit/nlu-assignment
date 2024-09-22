@@ -4,10 +4,9 @@ import copy
 import torch
 import torch.optim as optim
 
-from logger.Logger import Logger
-from utils.Environment import Environment
-from utils.utils import train_loop, eval_loop
-from models import get_model, save_model
+from utils import Environment, Logger
+from functions import train_loop, eval_loop
+from model import LM_RNN
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--model", default="rnn")
@@ -25,8 +24,8 @@ parser.add_argument("--train-batch-size", type=int, default=64)
 parser.add_argument("--dev-batch-size", type=int, default=128)
 parser.add_argument("--test-batch-size", type=int, default=128)
 parser.add_argument("--epochs", type=int, default=100)
-parser.add_argument("--out-dropout", type=float, default=0.1)
-parser.add_argument("--emb-dropout", type=float, default=0.1)
+parser.add_argument("--out-dropout", type=float, default=None) # around 0.1
+parser.add_argument("--emb-dropout", type=float, default=None) # around 0.1
 
 
 def run_epochs(model, optimizer, criterion_train, criterion_eval, env, logger, patience=3):
@@ -56,7 +55,15 @@ def main():
     args = parser.parse_args()
     env = Environment(args)
     logger = Logger(env)
-    model = get_model(env)
+    model = LM_RNN(
+            env.args.model,
+            env.args.emb_size, 
+            env.args.hid_size, 
+            len(env.lang), 
+            emb_dropout=env.args.emb_dropout,
+            out_dropout=env.args.out_dropout,
+            pad_index=env.pad_token_id
+        ).to(env.device)
     optimizer = optim.SGD(model.parameters(), lr=env.args.lr)
     criterion_train = torch.nn.CrossEntropyLoss(ignore_index=env.pad_token_id)
     criterion_eval = torch.nn.CrossEntropyLoss(ignore_index=env.pad_token_id, reduction='sum')
