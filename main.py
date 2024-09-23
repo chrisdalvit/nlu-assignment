@@ -1,6 +1,7 @@
 import argparse
 import copy
 
+import numpy as np
 import torch
 import torch.optim as optim
 
@@ -34,9 +35,7 @@ def run_epochs(model, optimizer, criterion_train, criterion_eval, env, logger, p
     current_patience = patience
     for epoch in range(env.args.epochs):
         loss_train = train_loop(env.dataloaders["train"], optimizer, criterion_train, model, env.args.clip)
-        #losses_train.append(np.asarray(loss).mean())
         ppl_dev, loss_dev = eval_loop(env.dataloaders["dev"], criterion_eval, model)
-        #losses_dev.append(np.asarray(loss_dev).mean())
         print("Train loss: ", loss_train, " Dev loss: ", loss_dev)
         if  ppl_dev < best_ppl: # the lower, the better
             best_ppl = ppl_dev
@@ -44,7 +43,7 @@ def run_epochs(model, optimizer, criterion_train, criterion_eval, env, logger, p
             current_patience = patience
         else:
             current_patience -= 1
-        logger.add_epoch_log(epoch, loss_train, loss_dev, ppl_dev)
+        logger.add_epoch_log(epoch, np.asarray(loss_train).mean(), np.asarray(loss_dev).mean(), ppl_dev)
         if current_patience <= 0:
             break
         
