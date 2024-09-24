@@ -14,7 +14,7 @@ class LM_RNN(nn.Module):
     ):
         super(LM_RNN, self).__init__()
         self.embedding = nn.Embedding(output_size, emb_size, padding_idx=pad_index)
-        self.emb_dropout = nn.Dropout(p=emb_dropout) if emb_dropout else None
+        self.emb_dropout = nn.Dropout(p=emb_dropout) if emb_dropout > 0.0 else None
         
         if rec_layer == "rnn":
             self.rnn = nn.RNN(emb_size, hidden_size, n_layers, bidirectional=False, batch_first=True)
@@ -24,7 +24,7 @@ class LM_RNN(nn.Module):
             self.rnn = None
             
         self.pad_token = pad_index
-        self.out_dropout = nn.Dropout(p=out_dropout) if out_dropout else None
+        self.out_dropout = nn.Dropout(p=out_dropout) if out_dropout < 0.0 else None
         self.output = nn.Linear(hidden_size, output_size)
 
     def forward(self, input_sequence):

@@ -97,9 +97,9 @@ class Environment:
     def __init__(
         self,
         args,
-        train_path="dataset/PennTreeBank/ptb.train.txt",
-        dev_path="dataset/PennTreeBank/ptb.valid.txt",
-        test_path="dataset/PennTreeBank/ptb.test.txt",
+        train_path="../dataset/PennTreeBank/ptb.train.txt",
+        dev_path="../dataset/PennTreeBank/ptb.valid.txt",
+        test_path="../dataset/PennTreeBank/ptb.test.txt",
         pad_token="<pad>",
         eos_token="<eos>"
     ):

@@ -11,6 +11,7 @@ from model import LM_RNN
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--model", default="rnn")
+parser.add_argument("--optim", default="sgd")
 # Experiment also with a smaller or bigger model by changing hid and emb sizes
 # A large model tends to overfit
 parser.add_argument("--hid-size", type=int, default=200)
@@ -25,8 +26,8 @@ parser.add_argument("--train-batch-size", type=int, default=64)
 parser.add_argument("--dev-batch-size", type=int, default=128)
 parser.add_argument("--test-batch-size", type=int, default=128)
 parser.add_argument("--epochs", type=int, default=100)
-parser.add_argument("--out-dropout", type=float, default=None) # around 0.1
-parser.add_argument("--emb-dropout", type=float, default=None) # around 0.1
+parser.add_argument("--out-dropout", type=float, default=0) 
+parser.add_argument("--emb-dropout", type=float, default=0)
 
 
 def run_epochs(model, optimizer, criterion_train, criterion_eval, env, logger, patience=3):
@@ -36,7 +37,6 @@ def run_epochs(model, optimizer, criterion_train, criterion_eval, env, logger, p
     for epoch in range(env.args.epochs):
         loss_train = train_loop(env.dataloaders["train"], optimizer, criterion_train, model, env.args.clip)
         ppl_dev, loss_dev = eval_loop(env.dataloaders["dev"], criterion_eval, model)
-        print("Train loss: ", loss_train, " Dev loss: ", loss_dev)
         if  ppl_dev < best_ppl: # the lower, the better
             best_ppl = ppl_dev
             best_model = copy.deepcopy(model).to('cpu')
@@ -63,7 +63,13 @@ def main():
             out_dropout=env.args.out_dropout,
             pad_index=env.pad_token_id
         ).to(env.device)
-    optimizer = optim.SGD(model.parameters(), lr=env.args.lr)
+
+    optimizer = None
+    if env.args.optim == "sgd":
+        optimizer = optim.SGD(model.parameters(), lr=env.args.lr)
+    elif env.args.optim == "adam":
+        optimizer = optim.AdamW(model.parameters(), lr=env.args.lr)
+
     criterion_train = torch.nn.CrossEntropyLoss(ignore_index=env.pad_token_id)
     criterion_eval = torch.nn.CrossEntropyLoss(ignore_index=env.pad_token_id, reduction='sum')
     best_model = run_epochs(model, optimizer, criterion_train, criterion_eval, env, logger)
