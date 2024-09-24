@@ -7,8 +7,8 @@ class LM_RNN(nn.Module):
         emb_size, 
         hidden_size, 
         output_size, 
-        out_dropout=None,
-        emb_dropout=None,
+        out_dropout=0.0,
+        emb_dropout=0.0,
         pad_index=0, 
         n_layers=1
     ):
@@ -24,7 +24,7 @@ class LM_RNN(nn.Module):
             self.rnn = None
             
         self.pad_token = pad_index
-        self.out_dropout = nn.Dropout(p=out_dropout) if out_dropout < 0.0 else None
+        self.out_dropout = nn.Dropout(p=out_dropout) if out_dropout > 0.0 else None
         self.output = nn.Linear(hidden_size, output_size)
 
     def forward(self, input_sequence):
