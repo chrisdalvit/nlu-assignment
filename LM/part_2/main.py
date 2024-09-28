@@ -1,12 +1,13 @@
 import argparse
 import copy
+from math import ceil
 
 import torch
 import torch.optim as optim
 import numpy as np
 
 from model import LM_RNN
-from utils import Environment, Logger
+from utils import Environment, Logger, NTAvgSGD
 from functions import train_loop, eval_loop
 
 parser = argparse.ArgumentParser()
@@ -59,9 +60,22 @@ def main():
             weight_tying=True,
             variational_dropout=True
         ).to(env.device)
-    optimizer = optim.SGD(model.parameters(), lr=env.args.lr)
+    
     criterion_train = torch.nn.CrossEntropyLoss(ignore_index=env.pad_token_id)
     criterion_eval = torch.nn.CrossEntropyLoss(ignore_index=env.pad_token_id, reduction='sum')
+    optimizer = None
+    if env.args.optim == "sgd":
+        optimizer = optim.SGD(model.parameters(), lr=env.args.lr)
+    elif env.args.optim == "nt-avgsgd":
+        optimizer = NTAvgSGD(
+            model, 
+            env.dataloaders["dev"],
+            criterion_eval,
+            env.args.lr,
+            L = ceil(len(env.dataloaders["train"]) / env.args.train_batch_size),
+            n = 5
+        )
+        
     best_model = run_epochs(model, optimizer, criterion_train, criterion_eval, env, logger)
     final_ppl, _ = eval_loop(env.dataloaders["test"], criterion_eval, best_model)
     logger.set_final_ppl(final_ppl)

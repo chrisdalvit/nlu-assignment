@@ -2,6 +2,8 @@ import math
 
 import torch 
 
+from utils import NTAvgSGD
+
 def train_loop(data, optimizer, criterion, model, clip=5):
     model.train()
     loss_array = []
@@ -18,6 +20,9 @@ def train_loop(data, optimizer, criterion, model, clip=5):
         torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
         optimizer.step() # Update the weights
 
+    if isinstance(optimizer, NTAvgSGD):
+        optimizer.update_weights()
+    
     return sum(loss_array)/sum(number_of_tokens)
 
 def eval_loop(data, eval_criterion, model):

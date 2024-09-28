@@ -1,9 +1,68 @@
+import math
 import json
 from functools import partial
 
 import torch 
+import torch.optim as optim
 from torch.utils.data import DataLoader, Dataset
 
+
+class NTAvgSGD(optim.SGD):
+    
+    def __init__(self, model, eval_data, eval_criterion, lr, L, n) -> None:
+        super(NTAvgSGD, self).__init__(model.parameters(), lr=lr)
+        self._model = model
+        self._eval_data = eval_data
+        self._eval_criterion = eval_criterion
+        self._lr = lr
+        self._L = L
+        self._n = n 
+        self._params_sum = dict()
+        self._k = 0
+        self._t = 0 
+        self._T = 0
+        self._logs = []
+        
+    def step(self):
+        super(NTAvgSGD, self).step()
+        with torch.no_grad():
+            if self._k % self._L == 0 and self._T == 0:
+                v = self._compute_val_perpelexity()
+                log_idx = self._t - self._n - 1
+                min_log = min(self._logs[:log_idx]) if log_idx > 0 else float("inf")
+                if self._t > self._n and v > min_log:
+                    self._T = self._k
+                self._logs.append(v)
+                self._t += 1
+            self._k += 1
+            
+        if self._T > 0: # If averaging was triggered
+            for p in self.param_groups[0]['params']: # Compute Sum_T^k w_i
+                if p in self._params_sum:
+                    self._params_sum[p] = p.data.clone()
+                else:
+                    self._params_sum[p] += p.data
+        
+    def update_weights(self):
+        if self._T > 0:
+            for p in self.param_groups[0]['params']:
+                p.data = self._params_sum[p].clone() / (self._k - self._T + 1)
+
+    # Maybe make this function to parameter
+    def _compute_val_perpelexity(self):
+        self._model.eval()
+        loss_array = []
+        number_of_tokens = []
+        with torch.no_grad():
+            for sample in self._eval_data:
+                output = self._model(sample['source'])
+                loss = self._eval_criterion(output, sample['target'])
+                loss_array.append(loss.item())
+                number_of_tokens.append(sample["number_tokens"])
+
+        ppl = math.exp(sum(loss_array) / sum(number_of_tokens))
+        return ppl
+    
 
 class Lang():
     

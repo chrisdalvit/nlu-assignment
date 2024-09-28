@@ -10,7 +10,7 @@ class VariationalDropout(nn.Module):
     def forward(self, x):
         if not self.training:
             return x
-        mask = torch.ones(x.size(1), x.size(2)).bernoulli(1-self.p)
+        mask = torch.ones(x.size(1), x.size(2)).bernoulli(1-self.p).to(x.device)
         mask = mask.expand_as(x)
         return (mask * x) / (1 - self.p)
         
