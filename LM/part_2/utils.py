@@ -38,7 +38,7 @@ class NTAvgSGD(optim.SGD):
             
         if self._T > 0: # If averaging was triggered
             for p in self.param_groups[0]['params']: # Compute Sum_T^k w_i
-                if p in self._params_sum:
+                if p not in self._params_sum:
                     self._params_sum[p] = p.data.clone()
                 else:
                     self._params_sum[p] += p.data
@@ -61,6 +61,7 @@ class NTAvgSGD(optim.SGD):
                 number_of_tokens.append(sample["number_tokens"])
 
         ppl = math.exp(sum(loss_array) / sum(number_of_tokens))
+        self._model.train()
         return ppl
     
 
