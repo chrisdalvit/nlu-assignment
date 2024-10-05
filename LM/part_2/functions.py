@@ -8,21 +8,15 @@ def train_loop(data, optimizer, criterion, model, clip=5):
     model.train()
     loss_array = []
     number_of_tokens = []
-
     for sample in data:
-        optimizer.zero_grad() # Zeroing the gradient
+        optimizer.zero_grad()
         output = model(sample['source'])
         loss = criterion(output, sample['target'])
         loss_array.append(loss.item() * sample["number_tokens"])
         number_of_tokens.append(sample["number_tokens"])
-        loss.backward() # Compute the gradient, deleting the computational graph
-        # clip the gradient to avoid explosioning gradients
+        loss.backward() 
         torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
-        optimizer.step() # Update the weights
-
-    if isinstance(optimizer, NTAvgSGD):
-        optimizer.update_weights()
-    
+        optimizer.step()
     return sum(loss_array)/sum(number_of_tokens)
 
 def eval_loop(data, eval_criterion, model):
@@ -31,13 +25,12 @@ def eval_loop(data, eval_criterion, model):
     loss_array = []
     number_of_tokens = []
     # softmax = nn.Softmax(dim=1) # Use Softmax if you need the actual probability
-    with torch.no_grad(): # It used to avoid the creation of computational graph
+    with torch.no_grad():
         for sample in data:
             output = model(sample['source'])
             loss = eval_criterion(output, sample['target'])
             loss_array.append(loss.item())
             number_of_tokens.append(sample["number_tokens"])
-
     ppl = math.exp(sum(loss_array) / sum(number_of_tokens))
     loss_to_return = sum(loss_array) / sum(number_of_tokens)
     return ppl, loss_to_return
