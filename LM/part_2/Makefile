@@ -1,10 +1,11 @@
-emb_dropout = 0.3 # 0.1
-out_dropout = 0.3 # 0.1
-hid_dropout = 0.5 # 0.25
-num_layers = 3
-lr = 5
-epochs = 150
-emb_size = 700
+emb_dropout = 0.4 # 0.1 (default) / 0.4 
+out_dropout = 0.1 # 0.1 (default) / 0.1
+hid_dropout = 0.25 # 0.25 (default) / 0.25
+num_layers = 2 # 2 (default) / 3
+lr = 30 # 5 (default) / 30
+epochs = 100 # 100 (default) / 500
+emb_size = 400 # 300 (default) / 400
+train_batch_size = 20 # 64 (default) / 20
 
 benchmark_all: benchmark_baseline benchmark_weight_tying benchmark_var_dropout benchmark_ntasgd
 
@@ -17,6 +18,7 @@ benchmark_baseline:
 		--num-layers $(num_layers) \
 		--epochs $(epochs) \
 		--emb-size $(emb_size) \
+		--train-batch-size $(train_batch_size) \
 		--lr $(lr);
 
 benchmark_weight_tying:
@@ -29,6 +31,7 @@ benchmark_weight_tying:
 		--num-layers $(num_layers) \
 		--epochs $(epochs) \
 		--emb-size $(emb_size) \
+		--train-batch-size $(train_batch_size) \
 		--lr $(lr);
 
 benchmark_var_dropout:
@@ -42,6 +45,7 @@ benchmark_var_dropout:
 		--num-layers $(num_layers) \
 		--epochs $(epochs) \
 		--emb-size $(emb_size) \
+		--train-batch-size $(train_batch_size) \
 		--lr $(lr);
 
 benchmark_ntasgd:
@@ -55,5 +59,6 @@ benchmark_ntasgd:
 		--num-layers $(num_layers) \
 		--epochs $(epochs) \
 		--emb-size $(emb_size) \
+		--train-batch-size $(train_batch_size) \
 		--lr $(lr);
 	
