@@ -16,7 +16,7 @@ parser.add_argument("--optim", default="sgd")
 # A large model tends to overfit
 parser.add_argument("--emb-size", type=int, default=300)
 parser.add_argument("--lr", type=float, default=1.0)
-parser.add_argument("--clip", type=int, default=5)
+parser.add_argument("--clip", type=int, default=0.25)
 # Don't forget to experiment with a lower training batch size
 # Increasing the back propagation steps can be seen as a regularization step
 parser.add_argument("--train-batch-size", type=int, default=64)
@@ -49,40 +49,44 @@ def main():
     model.apply(init_weights)
     criterion_train = torch.nn.CrossEntropyLoss(ignore_index=env.pad_token_id)
     criterion_eval = torch.nn.CrossEntropyLoss(ignore_index=env.pad_token_id, reduction='sum')
+    
     optimizer = None
     if env.args.optim == "sgd":
         optimizer = optim.SGD(model.parameters(), lr=env.args.lr)
     elif env.args.optim == "nt-avgsgd":
         optimizer = NTAvgSGD(
-            model, 
-            env.dataloaders["dev"],
-            criterion_eval,
-            env.args.lr,
-            L = ceil(len(env.dataloaders["train"]) / env.args.train_batch_size),
-            n = 5
+            model.parameters(),
+            lr=env.args.lr
         )
+    
     best_ppl = float('inf')
     best_model = None
     current_patience = 3
     for epoch in range(env.args.epochs):
         loss_train = train_loop(env.dataloaders["train"], optimizer, criterion_train, model, env.args.clip)
-        if isinstance(optimizer, NTAvgSGD):
-            optimizer.set_average_weights()
+        if isinstance(optimizer, NTAvgSGD) and optimizer.avg_active:
+            optimizer.set_model_parameters()
         ppl_dev, loss_dev = eval_loop(env.dataloaders["dev"], criterion_eval, model)
-        if isinstance(optimizer, NTAvgSGD):
-            optimizer.reset_weights()
-        if  ppl_dev < best_ppl:
+        if ppl_dev < best_ppl:
             best_ppl = ppl_dev
             best_model = copy.deepcopy(model).to('cpu')
             current_patience = 3
         else:
-            current_patience -= 1
-        logger.add_epoch_log(epoch, np.asarray(loss_train).mean(), np.asarray(loss_dev).mean(), ppl_dev)
+            if isinstance(optimizer, NTAvgSGD) and optimizer.avg_active:
+                current_patience -= 1
+            elif isinstance(optimizer, optim.SGD):
+                current_patience -= 1
         if current_patience <= 0:
-            break  
+            break
+        if isinstance(optimizer, NTAvgSGD):
+            if optimizer.avg_active:
+                optimizer.logs.append(ppl_dev)
+                optimizer.reset_model_parameters()
+            elif optimizer.should_trigger(ppl_dev):
+                optimizer.start_averiging()
+        logger.add_epoch_log(epoch, np.asarray(loss_train).mean(), np.asarray(loss_dev).mean(), ppl_dev)
+    
     best_model.to(env.device)
-    if isinstance(optimizer, NTAvgSGD):
-        optimizer.set_average_weights()
     final_ppl, _ = eval_loop(env.dataloaders["test"], criterion_eval, best_model)
     logger.set_final_ppl(final_ppl)
     print(logger.dumps())
