@@ -2,7 +2,6 @@ import math
 
 import torch 
 
-from utils import NTAvgSGD
 
 def train_loop(data, optimizer, criterion, model, clip=5):
     model.train()

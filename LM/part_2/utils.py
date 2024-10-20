@@ -35,7 +35,7 @@ class NTAvgSGD(optim.Optimizer):
         return isinstance(self._optimizer, optim.ASGD)
 
     def should_trigger(self, eval_ppl):
-        return len(self.logs) > self._n and eval_ppl > min(self.logs[-self._n:])
+        return len(self.logs) > self._n and eval_ppl > min(self.logs[:-self._n])
 
     def start_averiging(self):
         self._optimizer = optim.ASGD(self._params, lr=self._lr, t0=0, lambd=0.0)    
