@@ -1,6 +1,5 @@
 import argparse
 import copy
-from math import ceil
 
 import torch
 import torch.optim as optim
@@ -12,13 +11,9 @@ from functions import train_loop, eval_loop, init_weights
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--optim", default="sgd")
-# Experiment also with a smaller or bigger model by changing hid and emb sizes
-# A large model tends to overfit
 parser.add_argument("--emb-size", type=int, default=300)
 parser.add_argument("--lr", type=float, default=1.0)
 parser.add_argument("--clip", type=int, default=0.25)
-# Don't forget to experiment with a lower training batch size
-# Increasing the back propagation steps can be seen as a regularization step
 parser.add_argument("--train-batch-size", type=int, default=64)
 parser.add_argument("--dev-batch-size", type=int, default=128)
 parser.add_argument("--test-batch-size", type=int, default=128)

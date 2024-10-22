@@ -2,31 +2,51 @@ import math
 
 import torch 
 
-def train_loop(data, optimizer, criterion, model, clip=5):
+def train_loop(data, optimizer, criterion, model, clip=5) -> int:
+    """Run one epoch of training. Function taken from Lab 4 (Neural Language Modelling)
+
+    Args:
+        data: Training dataloader
+        optimizer: Optimizer for weight update
+        criterion: Training loss function
+        model: PyTorch model
+        clip (int, optional): Max norm for gradient clipping. Defaults to 5.
+
+    Returns:
+        int: Average training loss of the epoch
+    """
     model.train()
     loss_array = []
     number_of_tokens = []
 
     for sample in data:
-        optimizer.zero_grad() # Zeroing the gradient
+        optimizer.zero_grad()
         output = model(sample['source'])
         loss = criterion(output, sample['target'])
         loss_array.append(loss.item() * sample["number_tokens"])
         number_of_tokens.append(sample["number_tokens"])
-        loss.backward() # Compute the gradient, deleting the computational graph
-        # clip the gradient to avoid explosioning gradients
+        loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
-        optimizer.step() # Update the weights
+        optimizer.step()
 
     return sum(loss_array)/sum(number_of_tokens)
 
-def eval_loop(data, eval_criterion, model):
+def eval_loop(data, eval_criterion, model) -> tuple:
+    """Run one epoch of evaluation. Function taken from Lab 4 (Neural Language Modelling)
+
+    Args:
+        data: Evaluation dataloader
+        eval_criterion: Evalutation loss function
+        model: PyTorch model
+
+    Returns:
+        tuple: Evalutation perplexity, average evaluation loss of the epoch
+    """
     model.eval()
     loss_to_return = []
     loss_array = []
     number_of_tokens = []
-    # softmax = nn.Softmax(dim=1) # Use Softmax if you need the actual probability
-    with torch.no_grad(): # It used to avoid the creation of computational graph
+    with torch.no_grad():
         for sample in data:
             output = model(sample['source'])
             loss = eval_criterion(output, sample['target'])
@@ -37,7 +57,12 @@ def eval_loop(data, eval_criterion, model):
     loss_to_return = sum(loss_array) / sum(number_of_tokens)
     return ppl, loss_to_return
 
-def init_weights(mat):
+def init_weights(mat) -> None:
+    """Initialize model weights. Function taken from Lab 4 (Neural Language Modelling)
+
+    Args:
+        mat: PyTorch module
+    """
     for m in mat.modules():
         if type(m) in [torch.nn.GRU, torch.nn.LSTM, torch.nn.RNN]:
             for name, param in m.named_parameters():

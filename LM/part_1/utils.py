@@ -6,12 +6,14 @@ from torch.utils.data import DataLoader, Dataset
 
 
 class Lang():
+    """Utility class for computation and storage of vocabulary. Class taken from Lab 4 (Neural Language Modelling)"""
     
     def __init__(self, corpus, special_tokens=[]):
         self.word2id = self.get_vocab(corpus, special_tokens)
         self.id2word = {v:k for k, v in self.word2id.items()}
         
     def get_vocab(self, corpus, special_tokens=[]):
+        """Compute word to id mapping of vocabulary."""
         output = {}
         i = 0
         for st in special_tokens:
@@ -29,16 +31,14 @@ class Lang():
     
     
 class PennTreeBank(Dataset):
-    # Mandatory methods are __init__, __len__ and __getitem__
+    """Class for PennTreeBank dataset. Class taken from Lab 4 (Neural Language Modelling)"""
+
     def __init__(self, corpus, lang):
         self.source = []
         self.target = []
-
         for sentence in corpus:
-            self.source.append(sentence.split()[0:-1]) # We get from the first token till the second-last token
-            self.target.append(sentence.split()[1:]) # We get from the second token till the last token
-            # See example in section 6.2
-
+            self.source.append(sentence.split()[0:-1])
+            self.target.append(sentence.split()[1:])
         self.source_ids = self.mapping_seq(self.source, lang)
         self.target_ids = self.mapping_seq(self.target, lang)
 
@@ -51,9 +51,8 @@ class PennTreeBank(Dataset):
         sample = {'source': src, 'target': trg}
         return sample
 
-    # Auxiliary methods
-
-    def mapping_seq(self, data, lang): # Map sequences of tokens to corresponding computed in Lang class
+    def mapping_seq(self, data, lang):
+        """Map sequences of tokens to corresponding computed in Lang class."""
         res = []
         for seq in data:
             tmp_seq = []
@@ -62,13 +61,14 @@ class PennTreeBank(Dataset):
                     tmp_seq.append(lang.word2id[x])
                 else:
                     print('OOV found!')
-                    print('You have to deal with that') # PennTreeBank doesn't have OOV but "Trust is good, control is better!"
+                    print('You have to deal with that')
                     break
             res.append(tmp_seq)
         return res
     
     
 class Logger:
+    """Class for custom data logger."""
     
     def __init__(self, env) -> None:
         self.data = {
@@ -78,6 +78,7 @@ class Logger:
         }
     
     def add_epoch_log(self, epoch, train_loss, eval_loss, ppl):
+        """Add record for single epoch."""
         self.data["epochs"].append({ 
             "epoch": epoch,
             "train_loss": train_loss, 
@@ -86,13 +87,16 @@ class Logger:
         })
         
     def set_final_ppl(self, ppl):
+        """Set final test perplexity of training run."""
         self.data["final_perplexity"] = ppl    
     
-    def dumps(self):
+    def dumps(self) -> str:
+        """Dump log data to JSON string."""
         return json.dumps(self.data)
     
     
 class Environment:
+    """Utility class for storage of hyperparameters and training run configuration."""
     
     def __init__(
         self,
@@ -103,6 +107,16 @@ class Environment:
         pad_token="<pad>",
         eos_token="<eos>"
     ):
+        """Init environment.
+
+        Args:
+            args: Parsed command line arguments.
+            train_path (str, optional): Path to training data. Defaults to "../dataset/PennTreeBank/ptb.train.txt".
+            dev_path (str, optional): Path to evaluation data. Defaults to "../dataset/PennTreeBank/ptb.valid.txt".
+            test_path (str, optional): Path to test data. Defaults to "../dataset/PennTreeBank/ptb.test.txt".
+            pad_token (str, optional): Padding token. Defaults to "<pad>".
+            eos_token (str, optional): End of sentence token. Defaults to "<eos>".
+        """
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.train_raw = read_file(train_path)
         self.dev_raw = read_file(dev_path)
@@ -133,8 +147,6 @@ class Environment:
     def dataloaders(self):
         train_batch_size, dev_batch_size, test_batch_size = self.args.train_batch_size, self.args.dev_batch_size, self.args.test_batch_size
         train_dataset, dev_dataset, test_dataset = self._get_datasets()
-        # Dataloader instantiation
-        # You can reduce the batch_size if the GPU memory is not enough
         train_loader = DataLoader(train_dataset, batch_size=train_batch_size, collate_fn=partial(collate_fn, pad_token=self.pad_token_id, device=self.device), shuffle=True)
         dev_loader = DataLoader(dev_dataset, batch_size=dev_batch_size, collate_fn=partial(collate_fn, pad_token=self.pad_token_id, device=self.device))
         test_loader = DataLoader(test_dataset, batch_size=test_batch_size, collate_fn=partial(collate_fn, pad_token=self.pad_token_id, device=self.device))
@@ -146,14 +158,15 @@ class Environment:
         
 
 def read_file(path, eos_token="<eos>"):
+    """Utility function for reading dataset file. Function taken from Lab 4 (Neural Language Modelling)"""
     output = []
     with open(path, "r") as f:
         for line in f.readlines():
             output.append(line.strip() + " " + eos_token)
     return output
 
-# Vocab with tokens to ids
 def get_vocab(corpus, special_tokens=[]):
+    """Utility function for vocabulary computation. Function taken from Lab 4 (Neural Language Modelling)"""
     output = {}
     i = 0
     for st in special_tokens:
@@ -167,32 +180,22 @@ def get_vocab(corpus, special_tokens=[]):
     return output
 
 def collate_fn(data, pad_token, device):
+    """Function applied to batches. Function taken from Lab 4 (Neural Language Modelling)"""
     def merge(sequences):
-        '''
-        merge from batch * sent_len to batch * max_len
-        '''
         lengths = [len(seq) for seq in sequences]
         max_len = 1 if max(lengths)==0 else max(lengths)
-        # Pad token is zero in our case
-        # So we create a matrix full of PAD_TOKEN (i.e. 0) with the shape
-        # batch_size X maximum length of a sequence
         padded_seqs = torch.LongTensor(len(sequences),max_len).fill_(pad_token)
         for i, seq in enumerate(sequences):
             end = lengths[i]
-            padded_seqs[i, :end] = seq # We copy each sequence into the matrix
-        padded_seqs = padded_seqs.detach()  # We remove these tensors from the computational graph
+            padded_seqs[i, :end] = seq
+        padded_seqs = padded_seqs.detach()
         return padded_seqs, lengths
-
-    # Sort data by seq lengths
-
     data.sort(key=lambda x: len(x["source"]), reverse=True)
     new_item = {}
     for key in data[0].keys():
         new_item[key] = [d[key] for d in data]
-
     source, _ = merge(new_item["source"])
     target, lengths = merge(new_item["target"])
-
     new_item["source"] = source.to(device)
     new_item["target"] = target.to(device)
     new_item["number_tokens"] = sum(lengths)
