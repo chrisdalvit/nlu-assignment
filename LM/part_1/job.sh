@@ -13,5 +13,5 @@
 module load cuda/12.1
 
 source ../../venv/bin/activate
-python3.10 main.py --model $1 --lr $2 --out-dropout $3 --emb-dropout $3 --optim $4
+python3.10 main.py $@
 deactivate

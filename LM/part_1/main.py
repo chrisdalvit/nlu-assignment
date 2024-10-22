@@ -6,7 +6,7 @@ import torch
 import torch.optim as optim
 
 from utils import Environment, Logger
-from functions import train_loop, eval_loop
+from functions import train_loop, eval_loop, init_weights
 from model import LM_RNN
 
 parser = argparse.ArgumentParser()
@@ -71,7 +71,7 @@ def main():
             out_dropout=env.args.out_dropout,
             pad_index=env.pad_token_id
         ).to(env.device)
-
+    model.apply(init_weights)
     optimizer = None
     if env.args.optim == "sgd":
         optimizer = optim.SGD(model.parameters(), lr=env.args.lr)
