@@ -41,7 +41,7 @@ class LM_RNN(nn.Module):
             self.emb_dropout = None
             
         if variational_dropout and hid_dropout > 0.0:
-            self.hid_dropout = VariationalDropout(p=hid_dropout)
+            self.hid_dropout = self.emb_dropout
         elif hid_dropout > 0.0:
             self.hid_dropout = nn.Dropout(p=hid_dropout)
         else:
@@ -56,7 +56,7 @@ class LM_RNN(nn.Module):
         self.rnns = nn.ModuleList(stacked_rnn)
         
         if variational_dropout and out_dropout > 0.0:
-            self.out_dropout = VariationalDropout(p=out_dropout)
+            self.out_dropout = self.emb_dropout
         elif out_dropout > 0.0:
             self.out_dropout = nn.Dropout(p=out_dropout)
         else:
