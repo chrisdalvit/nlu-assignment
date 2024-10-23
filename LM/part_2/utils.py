@@ -1,4 +1,3 @@
-import math
 import json
 from functools import partial
 
@@ -192,8 +191,6 @@ class Environment:
     def dataloaders(self):
         train_batch_size, dev_batch_size, test_batch_size = self.args.train_batch_size, self.args.dev_batch_size, self.args.test_batch_size
         train_dataset, dev_dataset, test_dataset = self._get_datasets()
-        # Dataloader instantiation
-        # You can reduce the batch_size if the GPU memory is not enough
         train_loader = DataLoader(train_dataset, batch_size=train_batch_size, collate_fn=partial(collate_fn, pad_token=self.pad_token_id, device=self.device), shuffle=True)
         dev_loader = DataLoader(dev_dataset, batch_size=dev_batch_size, collate_fn=partial(collate_fn, pad_token=self.pad_token_id, device=self.device))
         test_loader = DataLoader(test_dataset, batch_size=test_batch_size, collate_fn=partial(collate_fn, pad_token=self.pad_token_id, device=self.device))

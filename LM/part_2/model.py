@@ -2,12 +2,19 @@ import torch
 import torch.nn as nn
 
 class VariationalDropout(nn.Module):
+    """Class for variational dropout."""
     
     def __init__(self, p):
+        """Init dropout module.
+
+        Args:
+            p (float): Dropout rate.
+        """
         super(VariationalDropout, self).__init__()
         self.p = p
         
     def forward(self, x):
+        """Compute forward pass of module."""
         if not self.training:
             return x
         mask = torch.ones(x.size(1), x.size(2)).bernoulli(1-self.p).to(x.device)
@@ -17,6 +24,8 @@ class VariationalDropout(nn.Module):
         
 
 class LM_RNN(nn.Module):
+    """PyTorch model for language modelling."""
+    
     def __init__(
         self, 
         rec_layer,
@@ -30,6 +39,20 @@ class LM_RNN(nn.Module):
         weight_tying=False,
         variational_dropout=False
     ):
+        """Init model.
+
+        Args:
+            rec_layer (str): Type of recurrent cell. One of ['rnn', 'lstm'].
+            emb_size (int): Size of the embedding layer.
+            output_size (int): Size of the output layer.
+            out_dropout (float, optional): Dropout rate for the output layer. Defaults to 0.0 (no dropout).
+            emb_dropout (float, optional): Dropout rate for the embedding layer. Defaults to 0.0 (no dropout).
+            hid_dropout (float, optional): Dropout rate for the hidden layer. Defaults to 0.0 (no dropout).
+            pad_index (int, optional): Index of the padding token. Defaults to 0.
+            n_layers (int, optional): Number of recurrent layers. Defaults to 1.
+            weight_tying (bool, optional): Activate weight tying. Defaults to False.
+            variational_dropout (bool, optional): Use variational dropout. Defaults to False.
+        """
         super(LM_RNN, self).__init__()
         self.embedding = nn.Embedding(output_size, emb_size, padding_idx=pad_index)
         
@@ -68,6 +91,7 @@ class LM_RNN(nn.Module):
             
 
     def forward(self, input_sequence):
+        """Compute forward pass of model."""
         emb = self.embedding(input_sequence)
         if self.emb_dropout:
             emb = self.emb_dropout(emb)
