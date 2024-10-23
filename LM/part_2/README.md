@@ -12,6 +12,9 @@ The models are evaluated on the PennTreeBank using perplexity (PPL).
 All computations were conducted on the Marzola cluster of the University of Trento. To run the code clone the repository onto the cluster. To run all evaluations of the second part do 
 ```bash
 # Assuming you are in the root of the git repositroy
+python3.10 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
 cd LM/part_2
 mkdir output
 make benchmark_all
