@@ -1,4 +1,4 @@
-# Description LM - Part 1
+# Description LM - Part 2
 
 In the second part following regularization techniques are applied to the LSTM baseline from the previous part
 
