@@ -12,16 +12,10 @@ from model import LM_RNN
 parser = argparse.ArgumentParser()
 parser.add_argument("--model", default="rnn")
 parser.add_argument("--optim", default="sgd")
-# Experiment also with a smaller or bigger model by changing hid and emb sizes
-# A large model tends to overfit
 parser.add_argument("--hid-size", type=int, default=200)
 parser.add_argument("--emb-size", type=int, default=300)
-# With SGD try with an higher learning rate (> 1 for instance)
 parser.add_argument("--lr", type=float, default=1.0)
-# Clip the gradient
 parser.add_argument("--clip", type=int, default=5)
-# Don't forget to experiment with a lower training batch size
-# Increasing the back propagation steps can be seen as a regularization step
 parser.add_argument("--train-batch-size", type=int, default=64)
 parser.add_argument("--dev-batch-size", type=int, default=128)
 parser.add_argument("--test-batch-size", type=int, default=128)
@@ -31,13 +25,27 @@ parser.add_argument("--emb-dropout", type=float, default=0)
 
 
 def run_epochs(model, optimizer, criterion_train, criterion_eval, env, logger, patience=3):
+    """Run all epochs.
+
+    Args:
+        model: PyTorch model
+        optimizer: Optimizer for weight update
+        criterion_train: Training loss function
+        criterion_eval: Evaluation loss function
+        env: Training environment information
+        logger: Logger
+        patience (int, optional): Maximum patience count. Defaults to 3.
+
+    Returns:
+        nn.Module: Best model
+    """
     best_ppl = float('inf')
     best_model = None
     current_patience = patience
     for epoch in range(env.args.epochs):
         loss_train = train_loop(env.dataloaders["train"], optimizer, criterion_train, model, env.args.clip)
         ppl_dev, loss_dev = eval_loop(env.dataloaders["dev"], criterion_eval, model)
-        if  ppl_dev < best_ppl: # the lower, the better
+        if  ppl_dev < best_ppl:
             best_ppl = ppl_dev
             best_model = copy.deepcopy(model).to('cpu')
             current_patience = patience

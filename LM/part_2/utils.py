@@ -8,8 +8,16 @@ from torch.utils.data import DataLoader, Dataset
 
 
 class NTAvgSGD(optim.Optimizer):
+    """Class for Non-monotonically triggered ASGD implementation."""
     
     def __init__(self, params, lr, n=5):
+        """Init optimizer.
+
+        Args:
+            params: Model parameters.
+            lr (float): Learing rate
+            n (int, optional): Non-monotone interval. Defaults to 5.
+        """
         self._params = list(params)
         super(NTAvgSGD, self).__init__(self._params, defaults={'lr': lr})
         self._lr = lr
@@ -22,11 +30,13 @@ class NTAvgSGD(optim.Optimizer):
         self._optimizer.step()
         
     def set_model_parameters(self):
+        """Set the model parameters to the optimizer parameters and save current parameters."""
         for p in self._params:
             self._backup_params[p] = p.data.clone()
             p.data = self._optimizer.state[p]['ax'].clone()
             
     def reset_model_parameters(self):
+        """Reset the model parameters to the saved parameters."""
         for p in self._params:
             p.data = self._backup_params[p].clone()
     
@@ -41,12 +51,14 @@ class NTAvgSGD(optim.Optimizer):
         self._optimizer = optim.ASGD(self._params, lr=self._lr, t0=0, lambd=0.0)    
 
 class Lang():
+    """Utility class for computation and storage of vocabulary. Class taken from Lab 4 (Neural Language Modelling)"""
     
     def __init__(self, corpus, special_tokens=[]):
         self.word2id = self.get_vocab(corpus, special_tokens)
         self.id2word = {v:k for k, v in self.word2id.items()}
         
     def get_vocab(self, corpus, special_tokens=[]):
+        """Compute word to id mapping of vocabulary."""
         output = {}
         i = 0
         for st in special_tokens:
@@ -64,16 +76,14 @@ class Lang():
     
     
 class PennTreeBank(Dataset):
-    # Mandatory methods are __init__, __len__ and __getitem__
+    """Class for PennTreeBank dataset. Class taken from Lab 4 (Neural Language Modelling)"""
+    
     def __init__(self, corpus, lang):
         self.source = []
         self.target = []
-
         for sentence in corpus:
-            self.source.append(sentence.split()[0:-1]) # We get from the first token till the second-last token
-            self.target.append(sentence.split()[1:]) # We get from the second token till the last token
-            # See example in section 6.2
-
+            self.source.append(sentence.split()[0:-1])
+            self.target.append(sentence.split()[1:])
         self.source_ids = self.mapping_seq(self.source, lang)
         self.target_ids = self.mapping_seq(self.target, lang)
 
@@ -86,9 +96,8 @@ class PennTreeBank(Dataset):
         sample = {'source': src, 'target': trg}
         return sample
 
-    # Auxiliary methods
-
-    def mapping_seq(self, data, lang): # Map sequences of tokens to corresponding computed in Lang class
+    def mapping_seq(self, data, lang):
+        """Map sequences of tokens to corresponding computed in Lang class."""
         res = []
         for seq in data:
             tmp_seq = []
@@ -104,6 +113,7 @@ class PennTreeBank(Dataset):
     
     
 class Logger:
+    """Class for custom data logger."""
     
     def __init__(self, env) -> None:
         self.data = {
@@ -113,6 +123,7 @@ class Logger:
         }
     
     def add_epoch_log(self, epoch, train_loss, eval_loss, ppl):
+        """Add record for single epoch."""
         self.data["epochs"].append({ 
             "epoch": epoch,
             "train_loss": train_loss, 
@@ -121,13 +132,16 @@ class Logger:
         })
         
     def set_final_ppl(self, ppl):
+        """Set final test perplexity of training run."""
         self.data["final_perplexity"] = ppl    
     
     def dumps(self):
+        """Dump log data to JSON string."""
         return json.dumps(self.data)
     
     
 class Environment:
+    """Utility class for storage of hyperparameters and training run configuration."""
     
     def __init__(
         self,
@@ -138,6 +152,16 @@ class Environment:
         pad_token="<pad>",
         eos_token="<eos>"
     ):
+        """Init environment.
+
+        Args:
+            args: Parsed command line arguments.
+            train_path (str, optional): Path to training data. Defaults to "../dataset/PennTreeBank/ptb.train.txt".
+            dev_path (str, optional): Path to evaluation data. Defaults to "../dataset/PennTreeBank/ptb.valid.txt".
+            test_path (str, optional): Path to test data. Defaults to "../dataset/PennTreeBank/ptb.test.txt".
+            pad_token (str, optional): Padding token. Defaults to "<pad>".
+            eos_token (str, optional): End of sentence token. Defaults to "<eos>".
+        """
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.train_raw = read_file(train_path)
         self.dev_raw = read_file(dev_path)
@@ -181,14 +205,15 @@ class Environment:
         
 
 def read_file(path, eos_token="<eos>"):
+    """Utility function for reading dataset file. Function taken from Lab 4 (Neural Language Modelling)"""
     output = []
     with open(path, "r") as f:
         for line in f.readlines():
             output.append(line.strip() + " " + eos_token)
     return output
 
-# Vocab with tokens to ids
 def get_vocab(corpus, special_tokens=[]):
+    """Utility function for vocabulary computation. Function taken from Lab 4 (Neural Language Modelling)"""
     output = {}
     i = 0
     for st in special_tokens:
@@ -202,32 +227,22 @@ def get_vocab(corpus, special_tokens=[]):
     return output
 
 def collate_fn(data, pad_token, device):
+    """Function applied to batches. Function taken from Lab 4 (Neural Language Modelling)"""
     def merge(sequences):
-        '''
-        merge from batch * sent_len to batch * max_len
-        '''
         lengths = [len(seq) for seq in sequences]
         max_len = 1 if max(lengths)==0 else max(lengths)
-        # Pad token is zero in our case
-        # So we create a matrix full of PAD_TOKEN (i.e. 0) with the shape
-        # batch_size X maximum length of a sequence
         padded_seqs = torch.LongTensor(len(sequences),max_len).fill_(pad_token)
         for i, seq in enumerate(sequences):
             end = lengths[i]
-            padded_seqs[i, :end] = seq # We copy each sequence into the matrix
-        padded_seqs = padded_seqs.detach()  # We remove these tensors from the computational graph
+            padded_seqs[i, :end] = seq
+        padded_seqs = padded_seqs.detach()
         return padded_seqs, lengths
-
-    # Sort data by seq lengths
-
     data.sort(key=lambda x: len(x["source"]), reverse=True)
     new_item = {}
     for key in data[0].keys():
         new_item[key] = [d[key] for d in data]
-
     source, _ = merge(new_item["source"])
     target, lengths = merge(new_item["target"])
-
     new_item["source"] = source.to(device)
     new_item["target"] = target.to(device)
     new_item["number_tokens"] = sum(lengths)
