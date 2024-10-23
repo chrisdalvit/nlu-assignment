@@ -80,9 +80,10 @@ def main():
             break
         if isinstance(optimizer, NTAvgSGD):
             if optimizer.avg_active:
-                optimizer.logs.append(ppl_dev)
                 optimizer.reset_model_parameters()
-            elif optimizer.should_trigger(ppl_dev):
+            else:
+                optimizer.logs.append(ppl_dev)    
+            if optimizer.should_trigger(ppl_dev):
                 optimizer.start_averiging()
         logger.add_epoch_log(epoch, np.asarray(loss_train).mean(), np.asarray(loss_dev).mean(), ppl_dev)
     
