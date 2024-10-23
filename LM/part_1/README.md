@@ -9,16 +9,16 @@ In the first part the baseline RNN from Lab 4 is modified to improve performance
 The models are evaluated on the PennTreeBank using perplexity (PPL).
 
 # Run the code
-All computations were conducted on the Marzola cluster of the University of Trento. To run the code clone the repository on to the cluster. To run all evaluations of the first part do 
+All computations were conducted on the Marzola cluster of the University of Trento. To run the code clone the repository onto the cluster. To run all evaluations of the first part do 
 ```bash
 # Assuming you are in the root of the git repositroy
 cd LM/part_1
 mkdir output
 make benchmark_all
 ```
-This submits all benchmarking job to the compute nodes of the cluster. The results are stored in the ```output``` folder.
+This submits all benchmarking jobs to the compute nodes of the cluster. The results are stored in the ```output``` folder.
 
-Alternativerly you can run 
+Alternativerly, you can run 
 ```bash
 make benchmark_sgd
 ```
