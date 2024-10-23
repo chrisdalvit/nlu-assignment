@@ -19,11 +19,12 @@ num_layers=2
 epochs=100
 emb_size=400
 lr=10.0
+train_batch_size=64
 
 module load cuda/12.1
 
 source ../../venv/bin/activate
-python3.10 main.py job.sh --optim $optim \
+python3.10 main.py --optim $optim \
 			--weight-tying \
 			--variational-dropout \
 			--emb-dropout $emb_dropout \
