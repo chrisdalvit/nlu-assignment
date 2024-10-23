@@ -16,9 +16,10 @@ optim=sgd
 out_dropout=0.0
 emb_dropout=0.0
 optim=sgd
+lr=1.0
 
 module load cuda/12.1
 
 source ../../venv/bin/activate
-python3.10 main.py --model $model --lr $lr --out-dropout $out_dropout --emb-dropout $emb_dropout --optim $optim;
+python3.10 main.py --model $model --lr $lr --out-dropout $out_dropout --emb-dropout $emb_dropout --optim $optim
 deactivate

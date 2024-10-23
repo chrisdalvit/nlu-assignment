@@ -13,9 +13,10 @@ All computations were conducted on the Marzola cluster of the University of Tren
 ```bash
 # Assuming you are in the root of the git repositroy
 cd LM/part_1
+mkdir output
 make benchmark_all
 ```
-This submits all benchmarking job to the compute nodes of the cluster. The results are stored into an ```output``` folder that is created during the benchmarking.
+This submits all benchmarking job to the compute nodes of the cluster. The results are stored in the ```output``` folder.
 
 Alternativerly you can run 
 ```bash
