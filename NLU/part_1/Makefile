@@ -12,10 +12,10 @@ benchmark_baseline:
 		sbatch --output="output/baseline$${lr}.json" --error="output/baseline$${lr}.err" --job-name="baseline" job.sh \
 			--hid-size $(hid_size) \
 			--emb-size $(emb_size) \
-			--lr $$lr; \
+			--lr $$lr \
 			--clip $(clip) \
 			--emb-dropout $(emb_dropout) \
 			--out-dropout $(out_dropout) \
-			--hid-dropout $(hid_dropout) \
-	done 
+			--hid-dropout $(hid_dropout); \
+	done
 	
