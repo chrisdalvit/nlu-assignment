@@ -44,29 +44,19 @@ class ModelIAS(nn.Module):
         self.out_dropout = nn.Dropout(out_dropout) if out_dropout > 0 else None
         
     def forward(self, utterance, seq_lengths):
-        # utterance.size() = batch_size X seq_len
-        # utt_emb.size() = batch_size X seq_len X emb_size
         utt_emb = self.embedding(utterance) 
         if self.emb_dropout:
             utt_emb = self.emb_dropout(utt_emb)
-        
-        # pack_padded_sequence avoid computation over pad tokens reducing the computational cost
+
         packed_input = pack_padded_sequence(utt_emb, seq_lengths.cpu().numpy(), batch_first=True)
         packed_output, (last_hidden, cell) = self.utt_encoder(packed_input) 
-       
-        # Unpack the sequence
         utt_encoded, input_sizes = pad_packed_sequence(packed_output, batch_first=True)
-        # Get the last hidden state
         last_hidden = last_hidden[-1,:,:]
         
-        # Compute slot logits
         slots = self.slot_out(utt_encoded)
-        # Compute intent logits
         if self.out_dropout:
             last_hidden = self.out_dropout(last_hidden)
         intent = self.intent_out(last_hidden)
         
-        # Slot size: batch_size, seq_len, classes 
-        slots = slots.permute(0,2,1) # We need this for computing the loss
-        # Slot size: batch_size, classes, seq_len
+        slots = slots.permute(0,2,1)
         return slots, intent

@@ -17,6 +17,8 @@ parser.add_argument("--hid-size", type=int, default=200)
 parser.add_argument("--emb-size", type=int, default=300)
 parser.add_argument("--lr", type=float, default=0.0001)
 parser.add_argument("--clip", type=int, default=5)
+parser.add_argument("--num-layers", type=int, default=1)
+parser.add_argument("--train-batch-size", type=int, default=128)
 parser.add_argument("--emb-dropout", type=float, default=0.0)
 parser.add_argument("--out-dropout", type=float, default=0.0)
 parser.add_argument("--hid-dropout", type=float, default=0.0)
@@ -38,7 +40,8 @@ def main():
         bidirectional=env.args.bidirectional,
         emb_dropout=env.args.emb_dropout,
         out_dropout=env.args.out_dropout,
-        hid_dropout=env.args.hid_dropout
+        hid_dropout=env.args.hid_dropout,
+        n_layer=env.args.num_layers
     ).to(env.device)
     model.apply(init_weights)
     optimizer = optim.Adam(model.parameters(), lr=env.args.lr)
@@ -48,7 +51,7 @@ def main():
     train_dataset = IntentsAndSlots(env.train_raw, lang)
     dev_dataset = IntentsAndSlots(env.dev_raw, lang)
     test_dataset = IntentsAndSlots(env.test_raw, lang)
-    train_loader = DataLoader(train_dataset, batch_size=128, collate_fn=partial(collate_fn, pad_token=env.pad_token, device=env.device),  shuffle=True)
+    train_loader = DataLoader(train_dataset, batch_size=env.args.train_batch_size, collate_fn=partial(collate_fn, pad_token=env.pad_token, device=env.device),  shuffle=True)
     dev_loader = DataLoader(dev_dataset, batch_size=64, collate_fn=partial(collate_fn, pad_token=env.pad_token, device=env.device))
     test_loader = DataLoader(test_dataset, batch_size=64, collate_fn=partial(collate_fn, pad_token=env.pad_token, device=env.device))
     

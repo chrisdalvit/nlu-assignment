@@ -1,10 +1,11 @@
 hid_size = 200
 emb_size = 300
 lrs = 0.0001 0.0005 0.001
-clip = 5
 emb_dropout = 0.1
 out_dropout = 0.1
 hid_dropout = 0.1
+num_layers = 2
+train_batch_size = 64
 
 benchmark_all: benchmark_baseline benchmark_bidirectional benchmark_dropout
 
@@ -14,7 +15,8 @@ benchmark_baseline:
 			--hid-size $(hid_size) \
 			--emb-size $(emb_size) \
 			--lr $$lr \
-			--clip $(clip); \
+			--num-layers $(num_layers) \
+			--train-batch-size $(train_batch_size); \
 	done
 
 benchmark_bidirectional:
@@ -24,22 +26,21 @@ benchmark_bidirectional:
 			--hid-size $(hid_size) \
 			--emb-size $(emb_size) \
 			--lr $$lr \
-			--clip $(clip) \
-			--emb-dropout $(emb_dropout) \
-			--hid-dropout $(hid_dropout) \
-			--out-dropout $(out_dropout); \
+			--num-layers $(num_layers) \
+			--train-batch-size $(train_batch_size); \
 	done
 
 benchmark_dropout:
 	@for lr in $(lrs); do \
-		sbatch --output="output/baseline$${lr}_edr$(emb_dropout)_odr$(out_dropout).json" --error="output/baseline$${lr}_edr$(emb_dropout)_odr$(out_dropout).err" --job-name="dropout" job.sh \
+		sbatch --output="output/dropout$${lr}_edr$(emb_dropout)_odr$(out_dropout).json" --error="output/dropout$${lr}_edr$(emb_dropout)_odr$(out_dropout).err" --job-name="dropout" job.sh \
 			--bidirectional \
 			--hid-size $(hid_size) \
 			--emb-size $(emb_size) \
 			--lr $$lr \
-			--clip $(clip) \
 			--emb-dropout $(emb_dropout) \
 			--hid-dropout $(hid_dropout) \
+			--num-layers $(num_layers) \
+			--train-batch-size $(train_batch_size) \
 			--out-dropout $(out_dropout); \
 	done
 	
