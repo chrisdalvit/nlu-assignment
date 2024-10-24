@@ -3,28 +3,56 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
 class ModelIAS(nn.Module):
 
-    def __init__(self, hid_size, out_slot, out_int, emb_size, vocab_len, pad_index, n_layer=1):
+    def __init__(
+        self, 
+        hid_size, 
+        out_slot, 
+        out_int, 
+        emb_size, 
+        vocab_len, 
+        pad_index, 
+        n_layer=1, 
+        bidirectional=False,
+        emb_dropout=0.0,
+        out_dropout=0.0,
+        hid_dropout=0.0
+    ):
+        """Init model.
+
+        Args:
+            hid_size (int): Hidden size.
+            out_slot (int): Number of slots (output size for slot filling).
+            out_int (int): Number of intents (output size for intent class).
+            emb_size (int): Word embedding size.
+            vocab_len (int): Vocabulary length.
+            pad_index (int): Padding token index.
+            n_layer (int, optional): _description_. Defaults to 1.
+            bidirectional (bool, optional): _description_. Defaults to False.
+        """
         super(ModelIAS, self).__init__()
-        # hid_size = Hidden size
-        # out_slot = number of slots (output size for slot filling)
-        # out_int = number of intents (output size for intent class)
-        # emb_size = word embedding size
-        
+
         self.embedding = nn.Embedding(vocab_len, emb_size, padding_idx=pad_index)
+        self.utt_encoder = nn.LSTM(emb_size, hid_size, n_layer, bidirectional=bidirectional, batch_first=True)
         
-        self.utt_encoder = nn.LSTM(emb_size, hid_size, n_layer, bidirectional=False, batch_first=True)    
-        self.slot_out = nn.Linear(hid_size, out_slot)
+        if bidirectional:    
+            self.slot_out = nn.Linear(2*hid_size, out_slot)
+        else:
+            self.slot_out = nn.Linear(hid_size, out_slot)
+        
         self.intent_out = nn.Linear(hid_size, out_int)
-        # Dropout layer How/Where do we apply it?
-        self.dropout = nn.Dropout(0.1)
+        self.emb_dropout = nn.Dropout(emb_dropout) if emb_dropout > 0 else None
+        self.hid_dropout = nn.Dropout(hid_dropout) if hid_dropout > 0 else None
+        self.out_dropout = nn.Dropout(out_dropout) if out_dropout > 0 else None
         
     def forward(self, utterance, seq_lengths):
         # utterance.size() = batch_size X seq_len
-        utt_emb = self.embedding(utterance) # utt_emb.size() = batch_size X seq_len X emb_size
+        # utt_emb.size() = batch_size X seq_len X emb_size
+        utt_emb = self.embedding(utterance) 
+        if self.emb_dropout:
+            utt_emb = self.emb_dropout(utt_emb)
         
         # pack_padded_sequence avoid computation over pad tokens reducing the computational cost
         packed_input = pack_padded_sequence(utt_emb, seq_lengths.cpu().numpy(), batch_first=True)
-        # Process the batch
         packed_output, (last_hidden, cell) = self.utt_encoder(packed_input) 
        
         # Unpack the sequence
@@ -35,6 +63,8 @@ class ModelIAS(nn.Module):
         # Compute slot logits
         slots = self.slot_out(utt_encoded)
         # Compute intent logits
+        if self.out_dropout:
+            self.out_dropout(last_hidden)
         intent = self.intent_out(last_hidden)
         
         # Slot size: batch_size, seq_len, classes 
