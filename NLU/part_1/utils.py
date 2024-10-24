@@ -48,6 +48,35 @@ class Environment:
     @property
     def lang(self):
         return Lang(self.words, self.intents, self.slots, cutoff=0)
+    
+class Logger:
+    """Class for custom data logger."""
+    
+    def __init__(self, env) -> None:
+        self.data = {
+            "args": vars(env.args),
+            "epochs": [],
+            "final_slot_f1": None,
+            "final_intent_accuracy": None
+        }
+    
+    def add_epoch_log(self, epoch, train_loss, eval_loss, f1):
+        """Add record for single epoch."""
+        self.data["epochs"].append({ 
+            "epoch": epoch,
+            "train_loss": train_loss, 
+            "eval_loss": eval_loss, 
+            "f1": f1
+        })
+        
+    def set_final_scores(self, slot_f1, intent_acc):
+        """Set final test scores of training run."""
+        self.data["final_slot_f1"] = slot_f1
+        self.data["final_intent_accuracy"] = intent_acc    
+    
+    def dumps(self):
+        """Dump log data to JSON string."""
+        return json.dumps(self.data)
 
 class Lang():
     def __init__(self, words, intents, slots, cutoff=0, pad_token=0):
