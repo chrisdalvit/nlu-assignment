@@ -32,7 +32,7 @@ class ModelIAS(nn.Module):
         super(ModelIAS, self).__init__()
 
         self.embedding = nn.Embedding(vocab_len, emb_size, padding_idx=pad_index)
-        self.utt_encoder = nn.LSTM(emb_size, hid_size, n_layer, bidirectional=bidirectional, batch_first=True)
+        self.utt_encoder = nn.LSTM(emb_size, hid_size, n_layer, dropout=hid_dropout, bidirectional=bidirectional, batch_first=True)
         
         if bidirectional:    
             self.slot_out = nn.Linear(2*hid_size, out_slot)
@@ -41,7 +41,6 @@ class ModelIAS(nn.Module):
         
         self.intent_out = nn.Linear(hid_size, out_int)
         self.emb_dropout = nn.Dropout(emb_dropout) if emb_dropout > 0 else None
-        self.hid_dropout = nn.Dropout(hid_dropout) if hid_dropout > 0 else None
         self.out_dropout = nn.Dropout(out_dropout) if out_dropout > 0 else None
         
     def forward(self, utterance, seq_lengths):
@@ -64,7 +63,7 @@ class ModelIAS(nn.Module):
         slots = self.slot_out(utt_encoded)
         # Compute intent logits
         if self.out_dropout:
-            self.out_dropout(last_hidden)
+            last_hidden = self.out_dropout(last_hidden)
         intent = self.intent_out(last_hidden)
         
         # Slot size: batch_size, seq_len, classes 

@@ -19,6 +19,7 @@ parser.add_argument("--lr", type=float, default=0.0001)
 parser.add_argument("--clip", type=int, default=5)
 parser.add_argument("--emb-dropout", type=float, default=0.0)
 parser.add_argument("--out-dropout", type=float, default=0.0)
+parser.add_argument("--hid-dropout", type=float, default=0.0)
 parser.add_argument("--bidirectional", action='store_true')
 
 def main():
@@ -36,7 +37,8 @@ def main():
         env.pad_token,
         bidirectional=env.args.bidirectional,
         emb_dropout=env.args.emb_dropout,
-        out_dropout=env.args.out_dropout
+        out_dropout=env.args.out_dropout,
+        hid_dropout=env.args.hid_dropout
     ).to(env.device)
     model.apply(init_weights)
     optimizer = optim.Adam(model.parameters(), lr=env.args.lr)
@@ -70,7 +72,7 @@ def main():
             if patience <= 0:
                 break
             logger.add_epoch_log(epoch, np.asarray(loss).mean(), np.asarray(loss_dev).mean(), f1) 
-    results_test, intent_test, _ = eval_loop(test_loader, criterion_slots, criterion_intents, best_model, lang)    
+    results_test, intent_test, _ = eval_loop(test_loader, criterion_slots, criterion_intents, best_model.to(env.device), lang)    
     logger.set_final_scores(results_test['total']['f'], intent_test['accuracy'])
     print(logger.dumps())
     
