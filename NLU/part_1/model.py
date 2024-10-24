@@ -1,5 +1,27 @@
+import torch
 import torch.nn as nn
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
+
+
+class VariationalDropout(nn.Module):
+    """Class for variational dropout."""
+    
+    def __init__(self, p):
+        """Init dropout module.
+
+        Args:
+            p (float): Dropout rate.
+        """
+        super(VariationalDropout, self).__init__()
+        self.p = p
+        
+    def forward(self, x):
+        """Compute forward pass of module."""
+        if not self.training:
+            return x
+        mask = torch.ones(*(x.shape[1:])).bernoulli(1-self.p).to(x.device)
+        mask = mask.expand_as(x)
+        return (mask * x) / (1 - self.p)
 
 class ModelIAS(nn.Module):
 
@@ -13,6 +35,7 @@ class ModelIAS(nn.Module):
         pad_index, 
         n_layer=1, 
         bidirectional=False,
+        variational_dropout=False,
         emb_dropout=0.0,
         out_dropout=0.0,
         hid_dropout=0.0
@@ -40,8 +63,13 @@ class ModelIAS(nn.Module):
             self.slot_out = nn.Linear(hid_size, out_slot)
         
         self.intent_out = nn.Linear(hid_size, out_int)
-        self.emb_dropout = nn.Dropout(emb_dropout) if emb_dropout > 0 else None
-        self.out_dropout = nn.Dropout(out_dropout) if out_dropout > 0 else None
+        if variational_dropout:
+            dropout = VariationalDropout(emb_dropout)
+            self.emb_dropout = dropout
+            self.out_dropout = dropout
+        else:
+            self.emb_dropout = nn.Dropout(emb_dropout) if emb_dropout > 0 else None
+            self.out_dropout = nn.Dropout(out_dropout) if out_dropout > 0 else None
         
     def forward(self, utterance, seq_lengths):
         utt_emb = self.embedding(utterance) 

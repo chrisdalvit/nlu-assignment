@@ -23,6 +23,7 @@ parser.add_argument("--emb-dropout", type=float, default=0.0)
 parser.add_argument("--out-dropout", type=float, default=0.0)
 parser.add_argument("--hid-dropout", type=float, default=0.0)
 parser.add_argument("--bidirectional", action='store_true')
+parser.add_argument("--vdropout", action='store_true')
 
 def main():
     args = parser.parse_args()
@@ -41,7 +42,8 @@ def main():
         emb_dropout=env.args.emb_dropout,
         out_dropout=env.args.out_dropout,
         hid_dropout=env.args.hid_dropout,
-        n_layer=env.args.num_layers
+        n_layer=env.args.num_layers,
+        variational_dropout=env.args.vdropout
     ).to(env.device)
     model.apply(init_weights)
     optimizer = optim.Adam(model.parameters(), lr=env.args.lr)
