@@ -55,24 +55,30 @@ class Logger:
     def __init__(self, env) -> None:
         self.data = {
             "args": vars(env.args),
+            "runs": []
+        }
+        
+    def add_run(self):
+        """Add record for new run."""
+        self.data["runs"].append({
             "epochs": [],
             "final_slot_f1": None,
             "final_intent_accuracy": None
-        }
+        })
     
-    def add_epoch_log(self, epoch, train_loss, eval_loss, f1):
+    def add_epoch_log(self, run, epoch, train_loss, eval_loss, f1):
         """Add record for single epoch."""
-        self.data["epochs"].append({ 
+        self.data["runs"][run]["epochs"].append({ 
             "epoch": epoch,
             "train_loss": train_loss, 
             "eval_loss": eval_loss, 
             "f1": f1
         })
         
-    def set_final_scores(self, slot_f1, intent_acc):
+    def set_final_scores(self, run, slot_f1, intent_acc):
         """Set final test scores of training run."""
-        self.data["final_slot_f1"] = slot_f1
-        self.data["final_intent_accuracy"] = intent_acc    
+        self.data["runs"][run]["final_slot_f1"] = slot_f1
+        self.data["runs"][run]["final_intent_accuracy"] = intent_acc    
     
     def dumps(self):
         """Dump log data to JSON string."""
