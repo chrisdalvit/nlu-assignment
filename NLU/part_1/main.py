@@ -26,7 +26,6 @@ parser.add_argument("--emb-dropout", type=float, default=0.0)
 parser.add_argument("--out-dropout", type=float, default=0.0)
 parser.add_argument("--hid-dropout", type=float, default=0.0)
 parser.add_argument("--bidirectional", action='store_true')
-parser.add_argument("--vdropout", action='store_true')
 
 def run_epochs(run, model, train_loader, dev_loader, optimizer, env, lang, criterion_slots, criterion_intents, logger, n_epochs=200, patience=15):
     best_model = None
