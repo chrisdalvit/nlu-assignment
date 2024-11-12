@@ -6,23 +6,21 @@ from sklearn.metrics import classification_report
 def apply_first_subtoken_strategy(inputs, tokenizer):
     filtered_inputs = []
     for sentence in inputs:
-        new_sentence = []
-        for word in sentence.split():
-            word_tokens = tokenizer.tokenize(word)
-            new_sentence.append(word_tokens[0])
-        filtered_inputs.append(" ".join(new_sentence))
+        first_token_sentence = " ".join(tokenizer.tokenize(word)[0] for word in sentence.split())
+        filtered_inputs.append(first_token_sentence)
     return filtered_inputs
 
 
-def train_loop(data, optimizer, criterion_slots, criterion_intents, model, clip=5):
+def train_loop(data, optimizer, criterion_slots, criterion_intents, model, env, clip=5):
     model.train()
     loss_array = []
     for sample in data:
         optimizer.zero_grad()
         inputs = apply_first_subtoken_strategy(sample['sentence'], model.tokenizer)
         slots, intent = model(inputs)
-        loss_intent = criterion_intents(intent, sample['intents'])
-        loss_slot = criterion_slots(slots, sample['y_slots'])
+        
+        loss_intent = criterion_intents(intent.to(env.device), sample['intents'])
+        loss_slot = criterion_slots(slots.to(env.device), sample['y_slots'])
         loss = loss_intent + loss_slot
         loss_array.append(loss.item())
         loss.backward()
@@ -30,7 +28,7 @@ def train_loop(data, optimizer, criterion_slots, criterion_intents, model, clip=
         optimizer.step()
     return loss_array
 
-def eval_loop(data, criterion_slots, criterion_intents, model, lang):
+def eval_loop(data, criterion_slots, criterion_intents, model, env):
     model.eval()
     loss_array = []
     ref_intents = []
@@ -42,12 +40,12 @@ def eval_loop(data, criterion_slots, criterion_intents, model, lang):
         for sample in data:
             inputs = apply_first_subtoken_strategy(sample['sentence'], model.tokenizer)
             slots, intents = model(inputs)
-            loss_intent = criterion_intents(intents, sample['intents'])
-            loss_slot = criterion_slots(slots, sample['y_slots'])
+            loss_intent = criterion_intents(intents.to(env.device), sample['intents'])
+            loss_slot = criterion_slots(slots.to(env.device), sample['y_slots'])
             loss = loss_intent + loss_slot 
             loss_array.append(loss.item())
-            out_intents = [lang.id2intent[x] for x in torch.argmax(intents, dim=1).tolist()] 
-            gt_intents = [lang.id2intent[x] for x in sample['intents'].tolist()]
+            out_intents = [env.lang.id2intent[x] for x in torch.argmax(intents, dim=1).tolist()] 
+            gt_intents = [env.lang.id2intent[x] for x in sample['intents'].tolist()]
             ref_intents.extend(gt_intents)
             hyp_intents.extend(out_intents)
             
@@ -56,13 +54,13 @@ def eval_loop(data, criterion_slots, criterion_intents, model, lang):
                 length = sample['slots_len'].tolist()[id_seq]
                 utt_ids = sample['utterance'][id_seq][:length].tolist()
                 gt_ids = sample['y_slots'][id_seq].tolist()
-                gt_slots = [lang.id2slot[elem] for elem in gt_ids[:length]]
-                utterance = [lang.id2word[elem] for elem in utt_ids]
+                gt_slots = [env.lang.id2slot[elem] for elem in gt_ids[:length]]
+                utterance = [env.lang.id2word[elem] for elem in utt_ids]
                 to_decode = seq[:length].tolist()
                 ref_slots.append([(utterance[id_el], elem) for id_el, elem in enumerate(gt_slots)])
                 tmp_seq = []
                 for id_el, elem in enumerate(to_decode):
-                    tmp_seq.append((utterance[id_el], lang.id2slot[elem]))
+                    tmp_seq.append((utterance[id_el], env.lang.id2slot[elem]))
                 hyp_slots.append(tmp_seq)
     try:            
         results = evaluate(ref_slots, hyp_slots)
