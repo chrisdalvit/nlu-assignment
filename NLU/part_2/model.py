@@ -7,6 +7,7 @@ class ModelIAS(nn.Module):
         self,
         out_slot,
         out_intent,
+        dropout=0.0,
         version="bert-base-uncased"
     ):
         super(ModelIAS, self).__init__()
@@ -16,6 +17,8 @@ class ModelIAS(nn.Module):
         hid_size = self.bert.config.hidden_size
         self.slot_out = nn.Linear(hid_size, out_slot)
         self.intent_out = nn.Linear(hid_size, out_intent)
+        self.slot_dropout = nn.Dropout(dropout) if dropout > 0.0 else None
+        self.intent_dropout = nn.Dropout(dropout) if dropout > 0.0 else None
 
     def forward(self, inputs):    
         padded_tokens = self.tokenizer(inputs, return_tensors="pt", padding=True)
@@ -26,6 +29,9 @@ class ModelIAS(nn.Module):
         # Hidden representation of each token -> slot filling
         last_hidden_states = ouputs.last_hidden_state
         
+        if self.dropout:
+            last_hidden_states = self.slot_dropout(last_hidden_states)
+            pooler_out = self.intent_dropout(pooler_out)
         slots = self.slot_out(last_hidden_states).permute(0,2,1)
         intents = self.intent_out(pooler_out)
         
