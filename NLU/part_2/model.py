@@ -29,7 +29,7 @@ class ModelIAS(nn.Module):
         # Hidden representation of each token -> slot filling
         last_hidden_states = ouputs.last_hidden_state
         
-        if self.dropout:
+        if self.slot_dropout and self.intent_dropout:
             last_hidden_states = self.slot_dropout(last_hidden_states)
             pooler_out = self.intent_dropout(pooler_out)
         slots = self.slot_out(last_hidden_states).permute(0,2,1)
