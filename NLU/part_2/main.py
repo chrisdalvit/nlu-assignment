@@ -13,29 +13,23 @@ from model import ModelIAS
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--name", type=str)
-parser.add_argument("--num-runs", type=str, default=3)
+parser.add_argument("--num-runs", type=str, default=1)
+parser.add_argument("--num-epochs", type=int, default=10)
+parser.add_argument("--train-batch-size", type=int, default=64)
 parser.add_argument("--lr", type=float, default=0.0001)
 parser.add_argument("--dropout", type=float, default=0.0)
 parser.add_argument("--bert-version", type=str, choices=["bert-base-uncased", "bert-large-uncased"])
 
 
-def run_epochs(run, model, train_loader, dev_loader, optimizer, criterion_slots, criterion_intents, env, logger, n_epochs=30, patience=5):
-    best_model = None
-    best_f1 = 0
-    for epoch in range(n_epochs):
+def run_epochs(run, model, train_loader, dev_loader, optimizer, criterion_slots, criterion_intents, env, logger):
+    for epoch in range(env.args.num_epochs):
         loss = train_loop(train_loader, optimizer, criterion_slots, criterion_intents, model, env)
         results_dev, _, loss_dev = eval_loop(dev_loader, criterion_slots, criterion_intents, model, env)
         f1 = results_dev['total']['f']
-        if f1 > best_f1:
-            best_f1 = f1
-            best_model = copy.deepcopy(model)
-            patience = 5
-        else:
-            patience -= 1
-        if patience <= 0:
-            break
+        best_model = copy.deepcopy(model)
         logger.add_epoch_log(run, epoch, np.asarray(loss).mean(), np.asarray(loss_dev).mean(), f1)
     return best_model
+
 
 def main():
     args = parser.parse_args()
@@ -55,7 +49,7 @@ def main():
         train_dataset = IntentsAndSlots(env.train_raw, env.lang)
         dev_dataset = IntentsAndSlots(env.dev_raw, env.lang)
         test_dataset = IntentsAndSlots(env.test_raw, env.lang)
-        train_loader = DataLoader(train_dataset, batch_size=64, collate_fn=partial(collate_fn, pad_token=env.pad_token, device=env.device),  shuffle=True)
+        train_loader = DataLoader(train_dataset, batch_size=env.args.train_batch_size, collate_fn=partial(collate_fn, pad_token=env.pad_token, device=env.device),  shuffle=True)
         dev_loader = DataLoader(dev_dataset, batch_size=64, collate_fn=partial(collate_fn, pad_token=env.pad_token, device=env.device))
         test_loader = DataLoader(test_dataset, batch_size=64, collate_fn=partial(collate_fn, pad_token=env.pad_token, device=env.device))
         
