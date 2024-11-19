@@ -28,7 +28,7 @@ This project explores language modeling using Recurrent Neural Networks (RNNs) a
 
 \section{Implementation details}
 \label{sec:implementation}
-All models of the project are implemented in PyTorch. The RNN implementation from Lab 4 was used as a baseline. The baseline consists of an embedding layer, a RNN and a linear output layer. The baseline optimizer is stochastic gradient descent (SGD). 
+All models of the project are implemented in PyTorch \cite{paszke2019pytorchimperativestylehighperformance}. The RNN implementation from Lab 4 was used as a baseline. The baseline consists of an embedding layer, a RNN and a linear output layer. The baseline optimizer is stochastic gradient descent (SGD). 
 \paragraph*{First Part}
 For the first part, the baseline model was extended by replacing RNN cells with LSTM cells \cite{hochreiter1997long}. LSTMs are designed to address the vanishing and exploding gradient problems of vanilla RNNs \cite{sak2014long}. Furthermore, two dropout layers were implemented for regularization \cite{srivastava2014dropout}. Finally, the AdamW \cite{loshchilov2017decoupled} optimizer was used instead of SGD. Since PyTorch provides implementations for all the mentioned components, the implementation was straightforward.
 \paragraph*{Second Part}
