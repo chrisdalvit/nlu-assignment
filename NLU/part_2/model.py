@@ -1,5 +1,5 @@
 import torch.nn as nn
-from transformers import BertTokenizer, BertModel
+from transformers import BertTokenizer, BertModel, AutoModel, AutoTokenizer
 
 class ModelIAS(nn.Module):
 
@@ -11,8 +11,21 @@ class ModelIAS(nn.Module):
         version="bert-base-uncased"
     ):
         super(ModelIAS, self).__init__()
-        self.tokenizer = BertTokenizer.from_pretrained(version)
-        self.bert = BertModel.from_pretrained(version)
+        if version == "bert-tiny-uncased":
+            self.tokenizer = AutoTokenizer.from_pretrained("prajjwal1/bert-tiny")
+            self.bert = AutoModel.from_pretrained("prajjwal1/bert-tiny")
+        elif version == "bert-mini-uncased":
+            self.tokenizer = AutoTokenizer.from_pretrained("prajjwal1/bert-mini")
+            self.bert = AutoModel.from_pretrained("prajjwal1/bert-mini")
+        elif version == "bert-small-uncased":
+            self.tokenizer = AutoTokenizer.from_pretrained("prajjwal1/bert-small")
+            self.bert = AutoModel.from_pretrained("prajjwal1/bert-small")
+        elif version == "bert-medium-uncased":
+            self.tokenizer = AutoTokenizer.from_pretrained("prajjwal1/bert-medium")
+            self.bert = AutoModel.from_pretrained("prajjwal1/bert-medium")
+        else: 
+            self.tokenizer = BertTokenizer.from_pretrained(version)
+            self.bert = BertModel.from_pretrained(version)
         
         hid_size = self.bert.config.hidden_size
         self.slot_out = nn.Linear(hid_size, out_slot)

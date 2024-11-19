@@ -11,6 +11,15 @@ from functions import train_loop, eval_loop
 from utils import Logger, Environment, IntentsAndSlots, collate_fn
 from model import ModelIAS
 
+BERT_VERSIONS = [
+    "bert-base-uncased", 
+    "bert-large-uncased", 
+    "bert-tiny-uncased", 
+    "bert-small-uncased", 
+    "bert-medium-uncased", 
+    "bert-mini-uncased"
+]
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--name", type=str)
 parser.add_argument("--num-runs", type=str, default=1)
@@ -18,7 +27,7 @@ parser.add_argument("--num-epochs", type=int, default=10)
 parser.add_argument("--train-batch-size", type=int, default=64)
 parser.add_argument("--lr", type=float, default=0.0001)
 parser.add_argument("--dropout", type=float, default=0.0)
-parser.add_argument("--bert-version", type=str, choices=["bert-base-uncased", "bert-large-uncased"])
+parser.add_argument("--bert-version", type=str, choices=BERT_VERSIONS)
 
 
 def run_epochs(run, model, train_loader, dev_loader, optimizer, criterion_slots, criterion_intents, env, logger):
