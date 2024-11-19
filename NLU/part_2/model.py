@@ -10,6 +10,14 @@ class ModelIAS(nn.Module):
         dropout=0.0,
         version="bert-base-uncased"
     ):
+        """Init model.
+
+        Args:
+            out_slot (int): Number of slots (output size for slot filling).
+            out_intent (int): Number of intents (output size for intent class).
+            dropout (float, optional): Dropout rate. Defaults to 0.0.
+            version (str, optional): BERT version name. Defaults to "bert-base-uncased".
+        """
         super(ModelIAS, self).__init__()
         if version == "bert-tiny-uncased":
             self.tokenizer = AutoTokenizer.from_pretrained("prajjwal1/bert-tiny")
@@ -33,7 +41,8 @@ class ModelIAS(nn.Module):
         self.slot_dropout = nn.Dropout(dropout) if dropout > 0.0 else None
         self.intent_dropout = nn.Dropout(dropout) if dropout > 0.0 else None
 
-    def forward(self, inputs):    
+    def forward(self, inputs):   
+        """Compute forward pass of model.""" 
         padded_tokens = self.tokenizer(inputs, return_tensors="pt", padding=True)
         ouputs = self.bert(**padded_tokens)
         # Hidden representation of [CLS] -> intent

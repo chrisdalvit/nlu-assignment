@@ -28,8 +28,11 @@ class ModelIAS(nn.Module):
             emb_size (int): Word embedding size.
             vocab_len (int): Vocabulary length.
             pad_index (int): Padding token index.
-            n_layer (int, optional): _description_. Defaults to 1.
-            bidirectional (bool, optional): _description_. Defaults to False.
+            n_layer (int, optional): Number of LSTM layers. Defaults to 1.
+            bidirectional (bool, optional): Is LSTM bidirectional. Defaults to False.
+            emb_dropout (float): Embedding dropout rate. Defaults to 0.
+            out_dropout (float): Output dropout rate. Defaults to 0.
+            hid_dropout (float): Hidden layer dropout rate. Defaults to 0.
         """
         super(ModelIAS, self).__init__()
 
@@ -42,6 +45,7 @@ class ModelIAS(nn.Module):
         self.out_dropout = nn.Dropout(out_dropout) if out_dropout > 0 else None
         
     def forward(self, utterance, seq_lengths):
+        """Compute forward pass of model."""
         utt_emb = self.embedding(utterance) 
         if self.emb_dropout:
             utt_emb = self.emb_dropout(utt_emb)

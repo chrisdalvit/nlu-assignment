@@ -28,6 +28,25 @@ parser.add_argument("--hid-dropout", type=float, default=0.0)
 parser.add_argument("--bidirectional", action='store_true')
 
 def run_epochs(run, model, train_loader, dev_loader, optimizer, env, lang, criterion_slots, criterion_intents, logger, n_epochs=200, patience=15):
+    """Run all epochs.
+
+    Args:
+        run: Index of current run.
+        model: PyTorch model.
+        train_loader: Train dataloader.
+        dev_loader: Evaluation dataloader.
+        optimizer: Optimizer.
+        env: Training environment information.
+        lang: Vocabulary.
+        criterion_slots: Loss funciton for slot filling.
+        criterion_intents: Loss function for intent classification.
+        logger: Logger for metric logging.
+        n_epochs (int, optional): Number of epochs. Defaults to 200.
+        patience (int, optional): Number of patience. Defaults to 15.
+
+    Returns:
+        PyTorch model: Best model.
+    """
     best_model = None
     best_f1 = 0
     for epoch in range(1, n_epochs):

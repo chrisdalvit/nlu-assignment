@@ -7,6 +7,7 @@ from torch.utils.data import Dataset
 from sklearn.model_selection import train_test_split
 
 class Environment:
+    """Utility class for storage of hyperparameters and training run configuration."""
     
     def __init__(
         self, 
@@ -15,6 +16,14 @@ class Environment:
         test_path="./dataset/ATIS/test.json",
         portion=0.1
     ) -> None:
+        """Init environment.
+
+        Args:
+            args: Parsed command line arguments.
+            train_path (str, optional): Path to training data. Defaults to "./dataset/ATIS/train.json".
+            test_path (str, optional): Path to test data. Defaults to "./dataset/ATIS/test.json".
+            portion (float, optional): Train and Evaluation data ratio. Defaults to 0.1.
+        """
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.pad_token = 0
         self.args = args
@@ -85,6 +94,7 @@ class Logger:
         return json.dumps(self.data)
 
 class Lang():
+    """Utility class for computation and storage of vocabulary. Class taken from Lab 5 (Intent Classification and Slot Filling)"""
     def __init__(self, words, intents, slots, cutoff=0, pad_token=0):
         self.pad_token = pad_token
         self.word2id = self.w2id(words, cutoff=cutoff, unk=True)
@@ -114,6 +124,8 @@ class Lang():
         return vocab
 
 class IntentsAndSlots(Dataset):
+    """Class for ATIS dataset. Class taken from Lab 5 (Intent Classification and Slot Filling)"""
+    
     def __init__(self, dataset, lang, unk='unk'):
         self.utterances = []
         self.intents = []
@@ -143,7 +155,8 @@ class IntentsAndSlots(Dataset):
     def mapping_lab(self, data, mapper):
         return [mapper[x] if x in mapper else mapper[self.unk] for x in data]
     
-    def mapping_seq(self, data, mapper): # Map sequences to number
+    def mapping_seq(self, data, mapper):
+        """Map sequences of tokens to corresponding computed in Lang class."""
         res = []
         for seq in data:
             tmp_seq = []
@@ -156,31 +169,26 @@ class IntentsAndSlots(Dataset):
         return res
     
 def collate_fn(data, pad_token, device):
+    """Function applied to batches. Function taken from Lab 5 (Intent Classification and Slot Filling)"""
     def merge(sequences):
         lengths = [len(seq) for seq in sequences]
         max_len = 1 if max(lengths)==0 else max(lengths)
-        # Pad token is zero in our case
-        # So we create a matrix full of PAD_TOKEN (i.e. 0) with the shape 
-        # batch_size X maximum length of a sequence
         padded_seqs = torch.LongTensor(len(sequences),max_len).fill_(pad_token)
         for i, seq in enumerate(sequences):
             end = lengths[i]
-            padded_seqs[i, :end] = seq # We copy each sequence into the matrix
-        # print(padded_seqs)
-        padded_seqs = padded_seqs.detach()  # We remove these tensors from the computational graph
+            padded_seqs[i, :end] = seq
+        padded_seqs = padded_seqs.detach()
         return padded_seqs, lengths
-    # Sort data by seq lengths
     data.sort(key=lambda x: len(x['utterance']), reverse=True) 
     new_item = {}
     for key in data[0].keys():
         new_item[key] = [d[key] for d in data]
         
-    # We just need one length for packed pad seq, since len(utt) == len(slots)
     src_utt, _ = merge(new_item['utterance'])
     y_slots, y_lengths = merge(new_item["slots"])
     intent = torch.LongTensor(new_item["intent"])
     
-    src_utt = src_utt.to(device) # We load the Tensor on our selected device
+    src_utt = src_utt.to(device)
     y_slots = y_slots.to(device)
     intent = intent.to(device)
     y_lengths = torch.LongTensor(y_lengths).to(device)

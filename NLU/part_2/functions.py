@@ -4,6 +4,17 @@ from conll import evaluate
 from sklearn.metrics import classification_report
 
 def apply_first_subtoken_strategy(inputs, tokenizer):
+    """Filter the input according to the first subtoken strategy. 
+    
+    The inputs are tokenized and only the first subtoken for each word is stored. All other subtokens are discarded.
+
+    Args:
+        inputs: Batch of sentences.
+        tokenizer: Tokenizer.
+
+    Returns:
+        list: Batch of tokenized sentences
+    """
     filtered_inputs = []
     for sentence in inputs:
         first_token_sentence = " ".join(tokenizer.tokenize(word)[0] for word in sentence.split())
@@ -12,6 +23,20 @@ def apply_first_subtoken_strategy(inputs, tokenizer):
 
 
 def train_loop(data, optimizer, criterion_slots, criterion_intents, model, env, clip=5):
+    """Run one epoch of training. Function taken from Lab 5 (Intent Classification and Slot Filling)
+
+    Args:
+        data: Train dataloader.
+        optimizer: Train optimizer.
+        criterion_slots: Loss function for slot filling.
+        criterion_intents: Loss function for intent classification.
+        model: PyTorch model.
+        env: Training environment.
+        clip (int, optional): Gradient clipping. Defaults to 5.
+
+    Returns:
+        list: Array of train losses
+    """
     model.train()
     loss_array = []
     for sample in data:
@@ -29,13 +54,24 @@ def train_loop(data, optimizer, criterion_slots, criterion_intents, model, env, 
     return loss_array
 
 def eval_loop(data, criterion_slots, criterion_intents, model, env):
+    """Run one epoch of evaluation. Function taken from Lab 5 (Intent Classification and Slot Filling)
+
+    Args:
+        data: Evaluation dataloader.
+        criterion_slots: Loss function for slot filling.
+        criterion_intents: Loss function for intent classification.
+        model: PyTorch model.
+        env: Training environment.
+
+    Returns:
+        tuple: Evaluation metrics.
+    """
     model.eval()
     loss_array = []
     ref_intents = []
     hyp_intents = []
     ref_slots = []
     hyp_slots = []
-    #softmax = nn.Softmax(dim=1) # Use Softmax if you need the actual probability
     with torch.no_grad():
         for sample in data:
             inputs = apply_first_subtoken_strategy(sample['sentence'], model.tokenizer)

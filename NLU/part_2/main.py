@@ -31,6 +31,22 @@ parser.add_argument("--bert-version", type=str, choices=BERT_VERSIONS)
 
 
 def run_epochs(run, model, train_loader, dev_loader, optimizer, criterion_slots, criterion_intents, env, logger):
+    """Run all epochs.
+
+    Args:
+        run: Index of current run.
+        model: PyTorch model.
+        train_loader: Train dataloader.
+        dev_loader: Evaluation dataloader.
+        optimizer: Optimizer.
+        criterion_slots: Loss funciton for slot filling.
+        criterion_intents: Loss function for intent classification.
+        env: Training environment.
+        logger: Logger for metric logging.
+
+    Returns:
+        PyTorch model: Best model.
+    """
     for epoch in range(env.args.num_epochs):
         loss = train_loop(train_loader, optimizer, criterion_slots, criterion_intents, model, env)
         results_dev, _, loss_dev = eval_loop(dev_loader, criterion_slots, criterion_intents, model, env)
