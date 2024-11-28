@@ -15,7 +15,7 @@ def apply_first_subtoken_strategy(inputs, tokenizer):
         filtered_inputs.append(first_token_sentence)
     return filtered_inputs
 
-def collate_fn(data, tokenizer, lang):
+def collate_fn(data, tokenizer, lang, device):
     fst_subtokens = []
     for sample in data:
         fst_subtokens.append(apply_first_subtoken_strategy(sample['tokens'], tokenizer))
@@ -28,7 +28,7 @@ def collate_fn(data, tokenizer, lang):
         padded_slots.append(sample['slots'].tolist() + pad)
     X = tokenizer(fst_subtokens, padding=True, is_split_into_words=True, return_tensors="pt")
     y = torch.LongTensor(padded_slots)    
-    return X, y, data
+    return X.to(device), y.to(device), data
 
 class Lang():
     
