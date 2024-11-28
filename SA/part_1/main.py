@@ -62,11 +62,11 @@ def main():
 
     for _ in range(num_epochs):
         train_loss_array = train_loop(model, train_dataloader, optimizer, criterion, device, clip)       
-        eval_loss_array, f1 = eval_loop(model, test_dataloader, criterion, lang, device) 
+        eval_loss_array, results = eval_loop(model, test_dataloader, criterion, lang, device) 
         print(json.dumps({
             "train_losses": np.array(train_loss_array).mean(),
             "eval_losses": np.array(eval_loss_array).mean(),
-            "f1": f1
+            "results": results
         }))
        
 if __name__ == "__main__":

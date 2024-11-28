@@ -1,7 +1,7 @@
 import torch 
-from sklearn.metrics import f1_score
 
 from utils import Lang
+from evals import evaluate_ote
 
 def train_loop(model, dataloder, optimizer, criterion, device, clip):
     model.train()
@@ -21,6 +21,8 @@ def eval_loop(model, dataloader, criterion, lang: Lang, device):
     loss_array = []
     ys = []
     slots_array = []
+    gt_array = []
+    pred_array = []
     with torch.no_grad():
         for X, y, samples in dataloader:
             slots = model(X)
@@ -29,13 +31,15 @@ def eval_loop(model, dataloader, criterion, lang: Lang, device):
             ys.extend(y)
             slots_array.append(slots)
             
-            gt_array = []
-            pred_array = []
+            pred = slot.argmax(dim=1)
             for idx, slot in enumerate(slots):
-                pred = slot.softmax(dim=0).argmax(dim=0)
                 slot_len = len(samples[idx]['tokens'])
                 gt_array.append(y[idx][:slot_len].cpu())
                 pred_array.append(pred[:slot_len].cpu())
                 
-        f1s = f1_score(gt_array, pred_array, average=None)
-        return loss_array, {v: f1 for v, f1 in zip(lang.slot2id.keys(), f1s)}
+        try:
+            results = evaluate_ote(gt_array, pred_array, lang)
+        except Exception as ex:
+            print("Warning:", ex)
+            results = {'precision': 0, 'recall': 0, 'f1': 0}
+        return loss_array, results
