@@ -31,8 +31,8 @@ def eval_loop(model, dataloader, criterion, lang: Lang, device):
             ys.extend(y)
             slots_array.append(slots)
             
-            pred = slot.argmax(dim=1)
-            for idx, slot in enumerate(slots):
+            preds = slots.argmax(dim=1)
+            for idx, pred in enumerate(preds):
                 slot_len = len(samples[idx]['tokens'])
                 gt_array.append(y[idx][:slot_len].cpu())
                 pred_array.append(pred[:slot_len].cpu())

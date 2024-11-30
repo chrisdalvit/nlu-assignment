@@ -3,7 +3,7 @@ import json
 import torch
 from torch.utils.data import Dataset
 
-def _compute_lang_data(train_raw, test_raw):
+def compute_lang_data(train_raw, test_raw):
     corpus = train_raw + test_raw
     slots = set(sum([line['slots'] for line in corpus],[]))
     return slots
@@ -44,6 +44,9 @@ class Lang():
         for elem in elements:
                 vocab[elem] = len(vocab)
         return vocab
+    
+    def is_target(self, token):
+        return self.id2slot[token].startswith("T")
 
 class SemEval(Dataset):
     
@@ -79,7 +82,33 @@ class SemEval(Dataset):
                     tmp_seq.append(mapper[self.unk])
             res.append(tmp_seq)
         return res
-
+    
+class Logger:
+    """Class for custom data logger."""
+    
+    def __init__(self, args) -> None:
+        self.data = {
+            "args": vars(args),
+            "epochs": []
+        }
+    
+    def add_epoch_log(self, epoch, train_loss, eval_loss, results):
+        """Add record for single epoch."""
+        self.data["epochs"].append({ 
+            "epoch": epoch,
+            "train_loss": train_loss, 
+            "eval_loss": eval_loss, 
+            **results
+        })
+        
+    def set_final_scores(self, test_loss, results):
+        """Set final test scores of training run."""
+        self.data["test_loss"] = test_loss
+        self.data["final_results"] = results
+    
+    def dumps(self):
+        """Dump log data to JSON string."""
+        return json.dumps(self.data)
 
 def load_data(path):
     '''

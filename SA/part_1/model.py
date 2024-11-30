@@ -5,7 +5,6 @@ class ModelABSA(nn.Module):
 
     def __init__(
         self,
-        tokenizer, 
         bert,
         out_slot,
         dropout=0.0
@@ -18,7 +17,6 @@ class ModelABSA(nn.Module):
             version (str, optional): BERT version name. Defaults to "bert-base-uncased".
         """
         super(ModelABSA, self).__init__()
-        self.tokenizer = tokenizer
         self.bert = bert
         
         hid_size = self.bert.config.hidden_size
@@ -27,7 +25,6 @@ class ModelABSA(nn.Module):
 
     def forward(self, inputs):   
         """Compute forward pass of model.""" 
-        #padded_tokens = self.tokenizer(inputs, return_tensors="pt", padding=True)
         ouputs = self.bert(**inputs)
         
         # Hidden representation of each token -> slot filling
