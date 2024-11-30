@@ -1,0 +1,97 @@
+\documentclass[a4paper]{article}
+
+\usepackage{INTERSPEECH2021}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{multicol}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{siunitx}
+
+
+% Put the lab number of the corresponding exercise
+\title{NLU Course Project - Aspect Based Sentiment Analysis}
+\name{Christian Dalvit (249988)}
+
+\address{University of Trento}
+\email{christian.dalvit@studenti.unitn.it}
+
+\begin{document}
+
+\maketitle
+
+%Dear students, \\
+%here you can find a complete description of the sections that you need to write for the mini-report. You have to write a mini-report of \textbf{max 1 page (references, tables and images are excluded from the count)} for each last exercise of labs 4 (LM), 5  (NLU) and 6 (SA). \textbf{Reports longer than 1 page will not be checked.} The purpose of this is to give you a way to report cleanly the results and give you space to describe what you have done and/or the originality that you have added to the exercise.\\
+%\textbf{If you did the first part only, you have to just report the results in a table with a small description.}
+
+\section{Introduction}
+This project explores fine-tuning pre-trained BERT models for Aspect Based Sentiment Analysis, especially for target extraction. The effectiveness of these techniques is evaluated on the Laptop partition of SemEval2014 task 4 dataset using the precision, recall and $F_1$ score as a metric. The code of this project is made available on \href{https://github.com/chrisdalvit/nlu-assignment}{Github}.
+
+\section{Implementation details}
+\label{sec:implementation}
+All models in this project are implemented in PyTorch \cite{paszke2019pytorchimperativestylehighperformance}. The code implemented in the previous project about Natural Language Understanding was used as starting point for the implementation of this project. Mainly, the implementation for the PyTorch dataset and dataloader classes was adjusted. Additionally, the evaluation script from Tian et al. \cite{tian-etal-2023-end} was used and slightly adapted to exploit PyTorch tensor functionalities. 
+
+In this project, Aspect Based Sentiment Analysis and target extraction are formulated as slot filling task. Therefore, the Laptop partition of SemEval2014 task 4 is preprocessed into JSON files to fit the input format of the PyTorch dataset implementation from the previous project. For each sentence, a list of tokens with the corresponding labels is extracted. The possible labels are \texttt{O} (no target), \texttt{T-POS}, \texttt{T-NEU} or \texttt{T-NEG} (targets with positive, neutral or negative sentiment). The pre-trained $\text{BERT}_{\text{BASE}}$ and $\text{BERT}_{\text{LARGE}}$ models \cite{devlin2019bertpretrainingdeepbidirectional} from Huggingface are used. A linear output layer is added after the BERT models for fine-tuning. An optional dropout layer is added before the final linear layer for regularization. Since Huggingface provides a convenient Python API, loading the different models was straightforward to implement. Both models process uncased input text. 
+
+As in the Natural Language Understanding project, the WordPiece \cite{wu2016googlesneuralmachinetranslation} tokenization of BERT models can be problematic for slot filling tasks. In this project, the strategy of Chen et al. \cite{chen2019bertjointintentclassification} is used and only the first subtoken of a word is used for Aspect Based Sentiment Analysis and target extraction. This is implemented by selecting the first subtoken of each word from the tokenized input text. The BERT models are fine-tuned on predicting targets and their corresponding sentiment. This collapsed annotation schema allows reporting scores for Aspect Based Sentiment Analysis and target extraction \cite{hu2019opendomaintargetedsentimentanalysis}.
+
+\section{Results}
+All models were evaluated on the Laptop partition of SemEval2014 task 4 dataset, with the precision, recall and $F_1$ score used to measure slot filling performance. The evaluations were conducted on the Marzola cluster at the University of Trento. All models are fine-tuned with the AdamW \cite{loshchilov2019decoupledweightdecayregularization} optimizer, cross-entropy loss, a training batch size of 16, gradient clipping and a dropout rate of 0.2 for 100 epochs, with early stopping patience of 5. Each setup is run 3 times. 
+
+As mentioned in Section \ref{sec:implementation} the models are fine-tuned on predicting the target with the corresponding sentiment. The metrics for target extraction are computed by only checking if the predicted label and the ground truth label start with \texttt{T}, hence ignoring the suffixes \texttt{-POS}, \texttt{-NEU} and \texttt{-NEG}. The evaluation script is adapted to provide metrics for target extraction and Aspect Based Sentiment Analysis. Table \ref{tab:target_extraction} reports mean precision, recall and $F_1$ score for the target extraction task. Generally, the $\text{BERT}_{\text{LARGE}}$ performs better compared to the $\text{BERT}_{\text{BASE}}$ model. This is probably a consequence of the higher number of parameters in $\text{BERT}_{\text{LARGE}}$.
+
+Additionally, precision, recall and $F_1$ score for Aspect Based Sentiment Analysis are reported by Table \ref{tab:sentiment_analysis}. These metrics were computed by checking if the predicted labels exactly correspond with the ground truth labels, hence also considering the target sentiment. Predicting the full label is harder as target extraction, therefore all metrics in Table \ref{tab:sentiment_analysis} are significantly lower compared to the target execution metrics. Similar to the target extraction task, $\text{BERT}_{\text{LARGE}}$ models perform better than $\text{BERT}_{\text{BASE}}$ models.
+
+\begin{table}
+  \centering
+  \caption{Mean target extraction metrics}
+  \label{tab:target_extraction}
+  \begin{tabular}{l|c c c}
+    \toprule
+    \textbf{Model} & \multicolumn{3}{c}{\textbf{Metrics} } \\
+    \midrule
+    \textit{AdamW optimizer} & \textbf{Precision} & \textbf{Recall} & $\mathbf{F_1}$ \\
+    \midrule
+    $\text{BERT}_{\text{BASE}}$  \SI{1e-5}{}	& 89.87	                  & 82.96	              & 86.26 \\
+    $\text{BERT}_{\text{BASE}}$  \SI{5e-5}{}  & 90.98	                  & 81.81	              & 85.96 \\
+    $\text{BERT}_{\text{BASE}}$  \SI{1e-4}{}	& 91.94         	        & 79.66	              & 85.35 \\
+    $\text{BERT}_{\text{LARGE}}$ \SI{1e-5}{}	& 91.83	                  & \textbf{83.16}	    & \textbf{87.24} \\
+    $\text{BERT}_{\text{LARGE}}$ \SI{5e-5}{}	& 91.48	                  & 82.87	              & 86.86 \\
+    $\text{BERT}_{\text{LARGE}}$ \SI{1e-4}{}	& $\textbf{92.61}^*$	    & $78.44^*$	              & $84.93^*$ \\
+    \bottomrule
+  \end{tabular}
+  \begin{minipage}{7.5cm}
+    \vspace{0.1cm}
+    * This value was computed on only 1 run, because the traning procedure with the patience policy failed to converge to a good $\text{BERT}_{\text{LARGE}}$ model with a learning rate of \SI{1e-4}{}\\
+    Note: Bold values show the best score for each metric over all models.
+  \end{minipage}
+\end{table}
+
+\begin{table}
+  \centering
+  \caption{Mean sentiment analysis metrics}
+  \label{tab:sentiment_analysis}
+  \begin{tabular}{l|c c c}
+    \toprule
+    \textbf{Model} & \multicolumn{3}{c}{\textbf{Metrics} } \\
+    \midrule
+    \textit{AdamW optimizer} & \textbf{Precision} & \textbf{Recall} & $\mathbf{F_1}$ \\
+    \midrule
+    $\text{BERT}_{\text{BASE}}$  \SI{1e-5}{}	& 66.49	                    & 61.41	                & 63.83 \\
+    $\text{BERT}_{\text{BASE}}$  \SI{5e-5}{}  & 65.78	                    & 59.13	                & 62.13 \\
+    $\text{BERT}_{\text{BASE}}$  \SI{1e-4}{}	& 63.60	                    & 55.09	                & 59.03 \\
+    $\text{BERT}_{\text{LARGE}}$ \SI{1e-5}{}	& 69.63	                    & \textbf{63.07}	      & \textbf{66.16} \\
+    $\text{BERT}_{\text{LARGE}}$ \SI{5e-5}{}	& 69.20	                    & 62.72	                & 65.72 \\
+    $\text{BERT}_{\text{LARGE}}$ \SI{1e-4}{}	& $\textbf{70.68}^*$	      & $59.86^*$	            & $64.82^*$ \\
+    \bottomrule
+  \end{tabular}
+  \begin{minipage}{7.5cm}
+    \vspace{0.1cm}
+    * This value was computed on only 1 run, because the traning procedure with the patience policy failed to converge to a good $\text{BERT}_{\text{LARGE}}$ model with a learning rate of \SI{1e-4}{}\\
+    Note: Bold values show the best score for each metric over all models.
+  \end{minipage}
+\end{table}
+
+\bibliographystyle{IEEEtran}
+\bibliography{mybib}
+\end{document}
