@@ -4,11 +4,23 @@ import torch
 from torch.utils.data import Dataset
 
 def compute_lang_data(train_raw, test_raw):
+    """Compute the whole lang data from raw train and test data."""
     corpus = train_raw + test_raw
     slots = set(sum([line['slots'] for line in corpus],[]))
     return slots
 
 def apply_first_subtoken_strategy(inputs, tokenizer):
+    """Filter the input according to the first subtoken strategy. 
+    
+    The inputs are tokenized and only the first subtoken for each word is stored. All other subtokens are discarded.
+
+    Args:
+        inputs: Batch of sentences.
+        tokenizer: Tokenizer.
+
+    Returns:
+        list: Batch of tokenized sentences
+    """
     filtered_inputs = []
     for sentence in inputs:
         first_token_sentence = " ".join(tokenizer.tokenize(word)[0] for word in sentence.split())
@@ -16,6 +28,7 @@ def apply_first_subtoken_strategy(inputs, tokenizer):
     return filtered_inputs
 
 def collate_fn(data, tokenizer, lang, device):
+    """Function applied to batches. Function taken from Lab 5 (Intent Classification and Slot Filling)"""
     fst_subtokens = []
     for sample in data:
         fst_subtokens.append(apply_first_subtoken_strategy(sample['tokens'], tokenizer))
@@ -31,6 +44,7 @@ def collate_fn(data, tokenizer, lang, device):
     return X.to(device), y.to(device), data
 
 class Lang():
+    """Utility class for computation and storage of vocabulary. Class taken from Lab 5 (Intent Classification and Slot Filling)"""
     
     def __init__(self, slots, pad_token=0):
         self.pad_token = pad_token
@@ -46,9 +60,11 @@ class Lang():
         return vocab
     
     def is_target(self, token):
+        """Check if token is a target (= check if it starts with 'T')"""
         return self.id2slot[token].startswith("T")
 
 class SemEval(Dataset):
+    """PyTorch dataset class for the SemEval dataset."""
     
     def __init__(self, dataset, lang, unk='unk'):
         self.utterances = []

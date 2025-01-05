@@ -4,6 +4,19 @@ from utils import Lang
 from evals import evaluate_ote
 
 def train_loop(model, dataloder, optimizer, criterion, device, clip):
+    """Run one epoch of training. Function taken from Lab 5 (Intent Classification and Slot Filling)
+
+    Args:
+        model: PyTorch model.
+        dataloader: Train dataloader.
+        optimizer: Train optimizer.
+        criterion: Loss function.
+        device: PyTorch device.
+        clip (int, optional): Gradient clipping.
+
+    Returns:
+        list: Array of train losses
+    """
     model.train()
     loss_array = []
     for X, y, _ in dataloder:
@@ -17,6 +30,18 @@ def train_loop(model, dataloder, optimizer, criterion, device, clip):
     return loss_array
 
 def eval_loop(model, dataloader, criterion, lang: Lang, device):
+    """Run one epoch of evaluation. Function taken from Lab 5 (Intent Classification and Slot Filling)
+
+    Args:
+        model: PyTorch model.
+        dataloader: Evaluation dataloader.
+        criterion: Loss function.
+        lang: Lang object used for evaluation.
+        device: PyTorch device.
+
+    Returns:
+        tuple: Evaluation metrics.
+    """
     model.eval()
     loss_array = []
     ys = []

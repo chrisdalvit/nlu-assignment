@@ -5,6 +5,9 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--path", type=str)
 
+# Script to preprocess the dataset into the right format
+# This allows the reusage of code from previous tasks
+
 if __name__ == "__main__":
     args = parser.parse_args()
     
