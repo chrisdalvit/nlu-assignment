@@ -11,14 +11,15 @@
 #SBATCH --time=20:00:00
 #SBATCH --account=giuseppe.riccardi.edu
 
-model=lstm # one of [ rnn, lstm ]
+lr=0.0005
+dropout=0.2
+tbs=64
+layers=2
 optim=adam # one of [ sgd, adam ]
-out_dropout=0.5
-emb_dropout=0.5
-lr=0.001
 
 module load cuda/12.1
 
 source ../../venv/bin/activate
-python3.10 main.py --model $model --lr $lr --out-dropout $out_dropout --emb-dropout $emb_dropout --optim $optim --save
+python3.10 main.py --name bidirectional --bidirectional --optim $optim --lr $lr --num-layers $layers --train-batch-size $tbs --emb-dropout $dropout --hid-dropout $dropout --out-dropout $dropout --hid-size 200 --emb-size 300 --save
+
 deactivate

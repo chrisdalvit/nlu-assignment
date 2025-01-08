@@ -11,15 +11,15 @@
 #SBATCH --time=20:00:00
 #SBATCH --account=giuseppe.riccardi.edu
 
-optim=sgd
-out_dropout=0.0
-emb_dropout=0.0
-hid_dropout=0.0
+optim=nt-avgsgd # one of [ sgd, nt-avgsgd ]
+out_dropout=0.1
+emb_dropout=0.4
+hid_dropout=0.25
 num_layers=2
 epochs=100
 emb_size=400
 lr=10.0
-train_batch_size=64
+train_batch_size=20
 
 module load cuda/12.1
 
@@ -34,5 +34,6 @@ python3.10 main.py --optim $optim \
 			--epochs $epochs \
 			--emb-size $emb_size \
 			--train-batch-size $train_batch_size \
-			--lr $lr
+			--lr $lr \
+			--save
 deactivate

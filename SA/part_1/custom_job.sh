@@ -11,14 +11,12 @@
 #SBATCH --time=20:00:00
 #SBATCH --account=giuseppe.riccardi.edu
 
-model=lstm # one of [ rnn, lstm ]
-optim=adam # one of [ sgd, adam ]
-out_dropout=0.5
-emb_dropout=0.5
-lr=0.001
+lr=0.00001
+bert=bert-large-uncased
 
 module load cuda/12.1
 
 source ../../venv/bin/activate
-python3.10 main.py --model $model --lr $lr --out-dropout $out_dropout --emb-dropout $emb_dropout --optim $optim --save
+python3.10 main.py --name large --lr $lr --bert-version $bert --save
+
 deactivate
