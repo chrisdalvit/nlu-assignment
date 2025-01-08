@@ -55,6 +55,7 @@ def run_epochs(run, model, train_loader, dev_loader, optimizer, env, lang, crite
         loss = train_loop(train_loader, optimizer, criterion_slots, criterion_intents, model, clip=env.args.clip)
         results_dev, _, loss_dev = eval_loop(dev_loader, criterion_slots, criterion_intents, model, lang)
         f1 = results_dev['total']['f']
+        # Wait the first 5 epochs before starting to check for early stopping
         if epoch > 5 and f1 > best_f1:
             best_f1 = f1
             best_model = copy.deepcopy(model)

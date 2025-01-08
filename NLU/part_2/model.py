@@ -19,6 +19,7 @@ class ModelIAS(nn.Module):
             version (str, optional): BERT version name. Defaults to "bert-base-uncased".
         """
         super(ModelIAS, self).__init__()
+        # Load the right model from Huggingface
         if version == "bert-tiny-uncased":
             self.tokenizer = AutoTokenizer.from_pretrained("prajjwal1/bert-tiny")
             self.bert = AutoModel.from_pretrained("prajjwal1/bert-tiny")

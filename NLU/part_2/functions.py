@@ -46,6 +46,7 @@ def train_loop(data, optimizer, criterion_slots, criterion_intents, model, env, 
         
         loss_intent = criterion_intents(intent.to(env.device), sample['intents'])
         loss_slot = criterion_slots(slots.to(env.device), sample['y_slots'])
+        # Combine loss for intent and slot filling
         loss = loss_intent + loss_slot
         loss_array.append(loss.item())
         loss.backward()
