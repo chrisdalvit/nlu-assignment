@@ -60,14 +60,19 @@ def main():
     current_patience = 3
     for epoch in range(env.args.epochs):
         loss_train = train_loop(env.dataloaders["train"], optimizer, criterion_train, model, env.args.clip)
+        # If we are already averaging we set the model parameters of the optimizer parameters
         if isinstance(optimizer, NTAvgSGD) and optimizer.avg_active:
             optimizer.set_model_parameters()
         ppl_dev, loss_dev = eval_loop(env.dataloaders["dev"], criterion_eval, model)
+        # If the perpelexity increases we save the better model
+        # Else we decrease the patience
         if ppl_dev < best_ppl:
             best_ppl = ppl_dev
             best_model = copy.deepcopy(model).to('cpu')
             current_patience = 3
         else:
+            # If we are using NT-AvgSGD we only decrease the patience if the averaging is active
+            # Else we perform normal decreasing
             if isinstance(optimizer, NTAvgSGD) and optimizer.avg_active:
                 current_patience -= 1
             elif isinstance(optimizer, optim.SGD):
@@ -75,10 +80,12 @@ def main():
         if current_patience <= 0:
             break
         if isinstance(optimizer, NTAvgSGD):
+            # If we are already averaging we set reset the model parameters to the original parameters
             if optimizer.avg_active:
                 optimizer.reset_model_parameters()
             else:
-                optimizer.logs.append(ppl_dev)    
+                optimizer.logs.append(ppl_dev)
+            # Finally we check if we should trigger the averaging
             if optimizer.should_trigger(ppl_dev):
                 optimizer.start_averiging()
         logger.add_epoch_log(epoch, np.asarray(loss_train).mean(), np.asarray(loss_dev).mean(), ppl_dev)

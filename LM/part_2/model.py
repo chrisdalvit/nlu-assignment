@@ -63,6 +63,8 @@ class LM_RNN(nn.Module):
         else:
             self.emb_dropout = None
             
+        # Use same dropout mask if variational dropout is activated
+        # Else use different dropout masks for each layer
         if variational_dropout and hid_dropout > 0.0:
             self.hid_dropout = self.emb_dropout
         elif hid_dropout > 0.0:
@@ -78,6 +80,8 @@ class LM_RNN(nn.Module):
             stacked_rnn = None
         self.rnns = nn.ModuleList(stacked_rnn)
         
+        # Use same dropout mask if variational dropout is activated
+        # Else use different dropout masks for each layer
         if variational_dropout and out_dropout > 0.0:
             self.out_dropout = self.emb_dropout
         elif out_dropout > 0.0:
@@ -86,6 +90,7 @@ class LM_RNN(nn.Module):
             self.out_dropout = None
         
         self.output = nn.Linear(emb_size, output_size)
+        # Share weights if weight tying is activated
         if weight_tying:
             self.output.weight = self.embedding.weight
             
@@ -93,6 +98,7 @@ class LM_RNN(nn.Module):
     def forward(self, input_sequence):
         """Compute forward pass of model."""
         emb = self.embedding(input_sequence)
+        # Apply dropout if activated
         if self.emb_dropout:
             emb = self.emb_dropout(emb)
         
@@ -101,9 +107,11 @@ class LM_RNN(nn.Module):
         for idx, rnn in enumerate(self.rnns):
             rnn.flatten_parameters() # for compact memory usage
             rnn_out, _  = rnn(rnn_out)
+            # Apply dropout if activated
             if self.hid_dropout and idx < n_layers:
                 rnn_out = self.hid_dropout(rnn_out)
         
+        # Apply dropout if activated
         if self.out_dropout:
             rnn_out = self.out_dropout(rnn_out)
         output = self.output(rnn_out).permute(0,2,1)

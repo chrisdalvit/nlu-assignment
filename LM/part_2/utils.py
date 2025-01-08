@@ -44,9 +44,11 @@ class NTAvgSGD(optim.Optimizer):
         return isinstance(self._optimizer, optim.ASGD)
 
     def should_trigger(self, eval_ppl):
+        """Check if averaging should be triggered."""
         return len(self.logs) > self._n and eval_ppl > min(self.logs[:-self._n])
 
     def start_averiging(self):
+        """Start averaging of the optimizer."""
         self._optimizer = optim.ASGD(self._params, lr=self._lr, t0=0, lambd=0.0)    
 
 class Lang():
