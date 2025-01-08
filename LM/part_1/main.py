@@ -10,8 +10,8 @@ from functions import train_loop, eval_loop, init_weights
 from model import LM_RNN
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--model", default="rnn")
-parser.add_argument("--optim", default="sgd")
+parser.add_argument("--model", default="rnn", choices=["rnn", "lstm"])
+parser.add_argument("--optim", default="sgd", choices=["sgd", "adam"])
 parser.add_argument("--hid-size", type=int, default=200)
 parser.add_argument("--emb-size", type=int, default=300)
 parser.add_argument("--lr", type=float, default=1.0)
@@ -22,6 +22,7 @@ parser.add_argument("--test-batch-size", type=int, default=128)
 parser.add_argument("--epochs", type=int, default=100)
 parser.add_argument("--out-dropout", type=float, default=0) 
 parser.add_argument("--emb-dropout", type=float, default=0)
+parser.add_argument("--save", action='store_true')
 
 
 def run_epochs(model, optimizer, criterion_train, criterion_eval, env, logger, patience=3):
@@ -84,6 +85,9 @@ def main():
     final_ppl, _ = eval_loop(env.dataloaders["test"], criterion_eval, best_model)
     logger.set_final_ppl(final_ppl)
     print(logger.dumps())
+    
+    if env.args.save:
+        torch.save(best_model.state_dict(), "output/model.pt")
 
 if __name__ == "__main__":
     main()

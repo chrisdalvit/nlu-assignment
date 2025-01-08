@@ -27,7 +27,7 @@ parser.add_argument("--num-epochs", type=int, default=100)
 parser.add_argument("--train-batch-size", type=int, default=16)
 parser.add_argument("--dropout", type=float, default=0.2)
 parser.add_argument("--bert-version", type=str, choices=BERT_VERSIONS, default=BERT_VERSIONS[0])
-
+parser.add_argument("--save", action="store_true")
 
 def main():
     args = parser.parse_args()
@@ -82,6 +82,9 @@ def main():
     test_loss_array, results = eval_loop(best_model, test_dataloader, criterion, lang, device)
     logger.set_final_scores(np.array(test_loss_array).mean(), results)
     print(logger.dumps())
+    
+    if args.save:
+        torch.save(best_model.state_dict(), "output/model.pt")
     
 if __name__ == "__main__":
     main()

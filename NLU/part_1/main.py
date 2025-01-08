@@ -2,6 +2,7 @@ import copy
 import argparse
 from functools import partial
 
+import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
@@ -26,6 +27,7 @@ parser.add_argument("--emb-dropout", type=float, default=0.0)
 parser.add_argument("--out-dropout", type=float, default=0.0)
 parser.add_argument("--hid-dropout", type=float, default=0.0)
 parser.add_argument("--bidirectional", action='store_true')
+parser.add_argument("--save", action='store_true')
 
 def run_epochs(run, model, train_loader, dev_loader, optimizer, env, lang, criterion_slots, criterion_intents, logger, n_epochs=200, patience=15):
     """Run all epochs.
@@ -108,6 +110,9 @@ def main():
         else:
             logger.set_final_scores(run, 0, 0)
     print(logger.dumps())
+    
+    if best_model and env.args.save:
+        torch.save(best_model.state_dict(), "output/model.pt")
     
 if __name__ == "__main__":
     main()

@@ -3,6 +3,7 @@ import argparse
 from functools import partial
 
 import numpy as np
+import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 import torch.optim as optim
@@ -28,6 +29,7 @@ parser.add_argument("--train-batch-size", type=int, default=64)
 parser.add_argument("--lr", type=float, default=0.0001)
 parser.add_argument("--dropout", type=float, default=0.0)
 parser.add_argument("--bert-version", type=str, choices=BERT_VERSIONS)
+parser.add_argument("--save", action='store_true')
 
 
 def run_epochs(run, model, train_loader, dev_loader, optimizer, criterion_slots, criterion_intents, env, logger):
@@ -85,6 +87,9 @@ def main():
         else:
             logger.set_final_scores(run, 0, 0)
     print(logger.dumps())
+    
+    if best_model and env.args.save:
+        torch.save(best_model.state_dict(), "output/model.pt")
         
 if __name__ == "__main__":
     main()

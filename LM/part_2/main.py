@@ -24,6 +24,7 @@ parser.add_argument("--hid-dropout", type=float, default=0)
 parser.add_argument("--weight-tying", action='store_true')
 parser.add_argument("--variational-dropout", action='store_true')
 parser.add_argument("--num-layers", type=int, default=1)
+parser.add_argument("--save", action='store_true')
 
 def main():
     args = parser.parse_args()
@@ -86,6 +87,9 @@ def main():
     final_ppl, _ = eval_loop(env.dataloaders["test"], criterion_eval, best_model)
     logger.set_final_ppl(final_ppl)
     print(logger.dumps())
+    
+    if env.args.save:
+        torch.save(best_model.state_dict(), "output/model.pt")
     
 if __name__ == "__main__":
     main()
