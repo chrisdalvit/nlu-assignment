@@ -46,3 +46,9 @@ or
 make benchmark_tiny 
 ```
 to only perform a subset of the benchmarking.
+
+If you want to test a custom configuration adjust the parameters in the ```custom_job.sh``` and run
+```bash
+sbatch custom_job.sh
+```
+The results are stored in ```output/custom.json```.
