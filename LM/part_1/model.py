@@ -44,9 +44,11 @@ class LM_RNN(nn.Module):
     def forward(self, input_sequence):
         """Compute forward pass of model."""
         emb = self.embedding(input_sequence)
+        # Apply dropout if activated
         if self.emb_dropout:
             emb = self.emb_dropout(emb)
         rnn_out, _  = self.rnn(emb)
+        # Apply dropout if activated
         if self.out_dropout:
             rnn_out = self.out_dropout(rnn_out)
         output = self.output(rnn_out).permute(0,2,1)

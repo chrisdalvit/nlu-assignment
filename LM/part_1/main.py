@@ -46,6 +46,8 @@ def run_epochs(model, optimizer, criterion_train, criterion_eval, env, logger, p
     for epoch in range(env.args.epochs):
         loss_train = train_loop(env.dataloaders["train"], optimizer, criterion_train, model, env.args.clip)
         ppl_dev, loss_dev = eval_loop(env.dataloaders["dev"], criterion_eval, model)
+        # If the perpelexity increases we save the better model
+        # Else we decrease the patience
         if  ppl_dev < best_ppl:
             best_ppl = ppl_dev
             best_model = copy.deepcopy(model).to('cpu')
