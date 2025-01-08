@@ -48,6 +48,7 @@ def main():
     lang = Lang(slots)
     out_slots = len(lang.slot2id)
     
+    # Load model and tokenizer from Huggingface
     tokenizer = BertTokenizer.from_pretrained(args.bert_version)
     lm = BertModel.from_pretrained(args.bert_version)
     model = ModelABSA(lm, out_slots, dropout).to(device)
@@ -68,6 +69,7 @@ def main():
     for i in range(num_epochs):
         train_loss_array = train_loop(model, train_dataloader, optimizer, criterion, device, clip)       
         eval_loss_array, results = eval_loop(model, dev_dataloader, criterion, lang, device) 
+        # Perfrom early stopping on sentiment F1 score
         if results['sentiment']['f1'] > best_score:
             best_score = results['sentiment']['f1']
             best_model = copy.deepcopy(model).to(device)

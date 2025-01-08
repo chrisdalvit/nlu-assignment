@@ -14,10 +14,12 @@ if __name__ == "__main__":
     with open(args.path) as file:
         data = []
         for line in file.readlines():
+            # Split line into sentence and token to slot mapping
             utt, slot_map = line.split("####")
             
             tokens = []
             slots = []
+            # For every token to slot mapping, collect tokens and slots
             for slot in slot_map.split():
                 parts = slot.rsplit("=", maxsplit=1)
                 if len(parts) == 2:
@@ -32,6 +34,7 @@ if __name__ == "__main__":
                 "slots": slots
             })
 
+    # Write the processed data into a new file
     filename = os.path.basename(args.path)
     if not os.path.exists("dataset_processed"):
         os.mkdir("dataset_processed")
